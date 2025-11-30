@@ -20,7 +20,7 @@
     "better-auth": "catalog:",
     "@better-auth/expo": "catalog:",
     "dotenv": "catalog:",
-    "zod": "^4.1.11",
+    "zod": "^4.1.13",
     "@bookmarkd/db": "workspace:*"
   }
 }

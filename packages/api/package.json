@@ -26,7 +26,7 @@
     "ai": "catalog:",
     "@ai-sdk/google": "catalog:",
     "dotenv": "catalog:",
-    "zod": "^4.1.11",
+    "zod": "^4.1.13",
     "@bookmarkd/auth": "workspace:*",
     "@bookmarkd/db": "workspace:*"
   }
