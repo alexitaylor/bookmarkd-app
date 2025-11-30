@@ -1,0 +1,26 @@
+{
+  "name": "@bookmarkd/auth",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "@bookmarkd/config": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "better-auth": "catalog:",
+    "@better-auth/expo": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "^4.1.11",
+    "@bookmarkd/db": "workspace:*"
+  }
+}
