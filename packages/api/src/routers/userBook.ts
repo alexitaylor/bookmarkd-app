@@ -73,6 +73,50 @@ export const userBookRouter = {
 			return entry || null;
 		}),
 
+	// Get user-book statuses for multiple books at once
+	getStatusForBooks: protectedProcedure
+		.input(z.object({ bookIds: z.array(z.number()).max(100) }))
+		.handler(async ({ input, context }) => {
+			const userId = context.session?.user?.id;
+			if (!userId) {
+				throw new Error("User not authenticated");
+			}
+
+			if (input.bookIds.length === 0) {
+				return {};
+			}
+
+			const { inArray } = await import("drizzle-orm");
+
+			const entries = await db
+				.select({
+					bookId: userBook.bookId,
+					status: userBook.status,
+					currentPage: userBook.currentPage,
+				})
+				.from(userBook)
+				.where(
+					and(
+						eq(userBook.userId, userId),
+						inArray(userBook.bookId, input.bookIds),
+					),
+				);
+
+			// Return as a map of bookId -> status info
+			const statusMap: Record<
+				number,
+				{ status: string; currentPage: number }
+			> = {};
+			for (const entry of entries) {
+				statusMap[entry.bookId] = {
+					status: entry.status,
+					currentPage: entry.currentPage,
+				};
+			}
+
+			return statusMap;
+		}),
+
 	// Add a book to shelf or update status
 	updateStatus: protectedProcedure
 		.input(

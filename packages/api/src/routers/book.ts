@@ -4,7 +4,7 @@ import { book } from "@bookmarkd/db/schema/book";
 import { bookGenre, genre } from "@bookmarkd/db/schema/genre";
 import { review } from "@bookmarkd/db/schema/review";
 import { userBook } from "@bookmarkd/db/schema/user-book";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure, publicProcedure } from "../index";
 import {
@@ -224,29 +224,6 @@ async function searchLocalBooks(
 }
 
 export const bookRouter = {
-	// Get all books with pagination
-	getAll: publicProcedure
-		.input(
-			z
-				.object({
-					limit: z.number().int().min(1).max(100).default(20),
-					offset: z.number().int().min(0).default(0),
-				})
-				.optional(),
-		)
-		.handler(async ({ input }) => {
-			const { limit = 20, offset = 0 } = input ?? {};
-
-			const books = await db
-				.select()
-				.from(book)
-				.limit(limit)
-				.offset(offset)
-				.orderBy(book.title);
-
-			return books;
-		}),
-
 	// Get a single book by ID with related data
 	getById: publicProcedure
 		.input(z.object({ id: z.number() }))
@@ -445,40 +422,70 @@ export const bookRouter = {
 		.input(
 			z
 				.object({
-					limit: z.number().int().min(1).max(50).default(12),
+					limit: z.number().int().min(1).max(50).default(20),
+					offset: z.number().int().min(0).default(0),
+					genreId: z.number().int().optional(),
+					query: z.string().optional(),
 				})
 				.optional(),
 		)
 		.handler(async ({ input }) => {
-			const { limit = 12 } = input ?? {};
+			const { limit = 20, offset = 0, genreId, query: searchQuery } = input ?? {};
 
-			// Get books with their add counts and average ratings
-			const popularBooks = await db
+			// Build query with optional filters
+			let dbQuery = db
 				.select({
 					id: book.id,
 					title: book.title,
 					subtitle: book.subtitle,
 					coverUrl: book.coverUrl,
 					pageCount: book.pageCount,
+					publisher: book.publisher,
+					datePublished: book.datePublished,
+					synopsis: book.synopsis,
 					addCount: sql<number>`count(distinct ${userBook.id})`.as("add_count"),
-					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as(
-						"avg_rating",
-					),
+					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as("avg_rating"),
+					reviewCount: sql<number>`count(distinct ${review.id})`.as("review_count"),
 				})
 				.from(book)
 				.leftJoin(userBook, eq(userBook.bookId, book.id))
 				.leftJoin(review, eq(review.bookId, book.id))
+				.$dynamic();
+
+			// Build where conditions
+			const conditions: ReturnType<typeof eq>[] = [];
+
+			// Add genre filter if provided
+			if (genreId) {
+				dbQuery = dbQuery.innerJoin(bookGenre, eq(bookGenre.bookId, book.id));
+				conditions.push(eq(bookGenre.genreId, genreId));
+			}
+
+			// Add search query filter if provided
+			if (searchQuery && searchQuery.trim().length > 0) {
+				const pattern = `%${searchQuery.trim()}%`;
+				conditions.push(sql`(${book.title} ILIKE ${pattern} OR ${book.subtitle} ILIKE ${pattern})`);
+			}
+
+			// Apply conditions
+			if (conditions.length > 0) {
+				dbQuery = dbQuery.where(and(...conditions));
+			}
+
+			// Get books with their add counts, average ratings, and review counts
+			const popularBooks = await dbQuery
 				.groupBy(book.id)
 				.orderBy(
 					desc(sql`count(distinct ${userBook.id})`),
 					desc(sql`coalesce(avg(${review.rating}), 0)`),
 				)
-				.limit(limit);
+				.limit(limit)
+				.offset(offset);
 
 			// Get authors for each book
 			const bookIds = popularBooks.map((b) => b.id);
 			if (bookIds.length === 0) {
-				return [];
+				return { books: [], hasMore: false };
 			}
 
 			const bookAuthors = await db
@@ -488,7 +495,8 @@ export const bookRouter = {
 					authorName: author.name,
 				})
 				.from(bookAuthor)
-				.innerJoin(author, eq(author.id, bookAuthor.authorId));
+				.innerJoin(author, eq(author.id, bookAuthor.authorId))
+				.where(inArray(bookAuthor.bookId, bookIds));
 
 			// Map authors to books
 			const authorsByBook = new Map<number, { id: number; name: string }[]>();
@@ -502,10 +510,15 @@ export const bookRouter = {
 				});
 			}
 
-			return popularBooks.map((b) => ({
+			const books = popularBooks.map((b) => ({
 				...b,
 				authors: authorsByBook.get(b.id) || [],
 			}));
+
+			return {
+				books,
+				hasMore: books.length === limit,
+			};
 		}),
 
 	// Get related books (same author or same genre)
@@ -654,21 +667,66 @@ export const bookRouter = {
 		.input(
 			z
 				.object({
-					limit: z.number().int().min(1).max(50).default(12),
+					limit: z.number().int().min(1).max(50).default(20),
+					offset: z.number().int().min(0).default(0),
+					genreId: z.number().int().optional(),
+					query: z.string().optional(),
 				})
 				.optional(),
 		)
 		.handler(async ({ input }) => {
-			const { limit = 12 } = input ?? {};
+			const { limit = 20, offset = 0, genreId, query: searchQuery } = input ?? {};
 
-			const recentBooks = await db
-				.select()
+			// Build query with optional filters
+			let dbQuery = db
+				.select({
+					id: book.id,
+					title: book.title,
+					subtitle: book.subtitle,
+					coverUrl: book.coverUrl,
+					pageCount: book.pageCount,
+					publisher: book.publisher,
+					datePublished: book.datePublished,
+					synopsis: book.synopsis,
+					createdAt: book.createdAt,
+					addCount: sql<number>`count(distinct ${userBook.id})`.as("add_count"),
+					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as("avg_rating"),
+					reviewCount: sql<number>`count(distinct ${review.id})`.as("review_count"),
+				})
 				.from(book)
+				.leftJoin(userBook, eq(userBook.bookId, book.id))
+				.leftJoin(review, eq(review.bookId, book.id))
+				.$dynamic();
+
+			// Build where conditions
+			const conditions: ReturnType<typeof eq>[] = [];
+
+			// Add genre filter if provided
+			if (genreId) {
+				dbQuery = dbQuery.innerJoin(bookGenre, eq(bookGenre.bookId, book.id));
+				conditions.push(eq(bookGenre.genreId, genreId));
+			}
+
+			// Add search query filter if provided
+			if (searchQuery && searchQuery.trim().length > 0) {
+				const pattern = `%${searchQuery.trim()}%`;
+				conditions.push(sql`(${book.title} ILIKE ${pattern} OR ${book.subtitle} ILIKE ${pattern})`);
+			}
+
+			// Apply conditions
+			if (conditions.length > 0) {
+				dbQuery = dbQuery.where(and(...conditions));
+			}
+
+			// Get recent books with their add counts, average ratings, and review counts
+			const recentBooks = await dbQuery
+				.groupBy(book.id)
 				.orderBy(desc(book.createdAt))
-				.limit(limit);
+				.limit(limit)
+				.offset(offset);
 
 			if (recentBooks.length === 0) {
-				return [];
+				return { books: [], hasMore: false };
 			}
 
 			// Get authors for each book
@@ -696,13 +754,250 @@ export const bookRouter = {
 				});
 			}
 
-			return recentBooks.map((b) => ({
+			const books = recentBooks.map((b) => ({
 				id: b.id,
 				title: b.title,
 				subtitle: b.subtitle,
 				coverUrl: b.coverUrl,
 				pageCount: b.pageCount,
+				publisher: b.publisher,
+				datePublished: b.datePublished,
+				synopsis: b.synopsis,
+				addCount: b.addCount,
+				avgRating: b.avgRating,
+				reviewCount: b.reviewCount,
 				authors: authorsByBook.get(b.id) || [],
 			}));
+
+			return {
+				books,
+				hasMore: books.length === limit,
+			};
+		}),
+
+	// Get all books sorted alphabetically by title
+	getAll: publicProcedure
+		.input(
+			z
+				.object({
+					limit: z.number().int().min(1).max(50).default(20),
+					offset: z.number().int().min(0).default(0),
+					genreId: z.number().int().optional(),
+					query: z.string().optional(),
+				})
+				.optional(),
+		)
+		.handler(async ({ input }) => {
+			const { limit = 20, offset = 0, genreId, query: searchQuery } = input ?? {};
+
+			// Build query with optional filters
+			let dbQuery = db
+				.select({
+					id: book.id,
+					title: book.title,
+					subtitle: book.subtitle,
+					coverUrl: book.coverUrl,
+					pageCount: book.pageCount,
+					publisher: book.publisher,
+					datePublished: book.datePublished,
+					synopsis: book.synopsis,
+					addCount: sql<number>`count(distinct ${userBook.id})`.as("add_count"),
+					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as("avg_rating"),
+					reviewCount: sql<number>`count(distinct ${review.id})`.as("review_count"),
+				})
+				.from(book)
+				.leftJoin(userBook, eq(userBook.bookId, book.id))
+				.leftJoin(review, eq(review.bookId, book.id))
+				.$dynamic();
+
+			// Build where conditions
+			const conditions: ReturnType<typeof eq>[] = [];
+
+			// Add genre filter if provided
+			if (genreId) {
+				dbQuery = dbQuery.innerJoin(bookGenre, eq(bookGenre.bookId, book.id));
+				conditions.push(eq(bookGenre.genreId, genreId));
+			}
+
+			// Add search query filter if provided
+			if (searchQuery && searchQuery.trim().length > 0) {
+				const pattern = `%${searchQuery.trim()}%`;
+				conditions.push(sql`(${book.title} ILIKE ${pattern} OR ${book.subtitle} ILIKE ${pattern})`);
+			}
+
+			// Apply conditions
+			if (conditions.length > 0) {
+				dbQuery = dbQuery.where(and(...conditions));
+			}
+
+			// Get books sorted alphabetically with stats
+			const allBooks = await dbQuery
+				.groupBy(book.id)
+				.orderBy(asc(book.title))
+				.limit(limit)
+				.offset(offset);
+
+			// Get authors for each book
+			const bookIds = allBooks.map((b) => b.id);
+			if (bookIds.length === 0) {
+				return { books: [], hasMore: false };
+			}
+
+			const bookAuthors = await db
+				.select({
+					bookId: bookAuthor.bookId,
+					authorId: author.id,
+					authorName: author.name,
+				})
+				.from(bookAuthor)
+				.innerJoin(author, eq(author.id, bookAuthor.authorId))
+				.where(inArray(bookAuthor.bookId, bookIds));
+
+			// Map authors to books
+			const authorsByBook = new Map<number, { id: number; name: string }[]>();
+			for (const ba of bookAuthors) {
+				if (!authorsByBook.has(ba.bookId)) {
+					authorsByBook.set(ba.bookId, []);
+				}
+				authorsByBook.get(ba.bookId)!.push({
+					id: ba.authorId,
+					name: ba.authorName,
+				});
+			}
+
+			const books = allBooks.map((b) => ({
+				id: b.id,
+				title: b.title,
+				subtitle: b.subtitle,
+				coverUrl: b.coverUrl,
+				pageCount: b.pageCount,
+				publisher: b.publisher,
+				datePublished: b.datePublished,
+				synopsis: b.synopsis,
+				addCount: b.addCount,
+				avgRating: b.avgRating,
+				reviewCount: b.reviewCount,
+				authors: authorsByBook.get(b.id) || [],
+			}));
+
+			return {
+				books,
+				hasMore: books.length === limit,
+			};
+		}),
+
+	// Get books sorted by highest rating
+	getByRating: publicProcedure
+		.input(
+			z
+				.object({
+					limit: z.number().int().min(1).max(50).default(20),
+					offset: z.number().int().min(0).default(0),
+					genreId: z.number().int().optional(),
+					query: z.string().optional(),
+				})
+				.optional(),
+		)
+		.handler(async ({ input }) => {
+			const { limit = 20, offset = 0, genreId, query: searchQuery } = input ?? {};
+
+			// Build query with optional filters
+			let dbQuery = db
+				.select({
+					id: book.id,
+					title: book.title,
+					subtitle: book.subtitle,
+					coverUrl: book.coverUrl,
+					pageCount: book.pageCount,
+					publisher: book.publisher,
+					datePublished: book.datePublished,
+					synopsis: book.synopsis,
+					addCount: sql<number>`count(distinct ${userBook.id})`.as("add_count"),
+					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as("avg_rating"),
+					reviewCount: sql<number>`count(distinct ${review.id})`.as("review_count"),
+				})
+				.from(book)
+				.leftJoin(userBook, eq(userBook.bookId, book.id))
+				.leftJoin(review, eq(review.bookId, book.id))
+				.$dynamic();
+
+			// Build where conditions
+			const conditions: ReturnType<typeof eq>[] = [];
+
+			// Add genre filter if provided
+			if (genreId) {
+				dbQuery = dbQuery.innerJoin(bookGenre, eq(bookGenre.bookId, book.id));
+				conditions.push(eq(bookGenre.genreId, genreId));
+			}
+
+			// Add search query filter if provided
+			if (searchQuery && searchQuery.trim().length > 0) {
+				const pattern = `%${searchQuery.trim()}%`;
+				conditions.push(sql`(${book.title} ILIKE ${pattern} OR ${book.subtitle} ILIKE ${pattern})`);
+			}
+
+			// Apply conditions
+			if (conditions.length > 0) {
+				dbQuery = dbQuery.where(and(...conditions));
+			}
+
+			// Get books sorted by rating (only books with ratings)
+			const ratedBooks = await dbQuery
+				.groupBy(book.id)
+				.orderBy(
+					desc(sql`coalesce(avg(${review.rating}), 0)`),
+					desc(sql`count(distinct ${review.id})`),
+				)
+				.limit(limit)
+				.offset(offset);
+
+			if (ratedBooks.length === 0) {
+				return { books: [], hasMore: false };
+			}
+
+			// Get authors for each book
+			const bookIds = ratedBooks.map((b) => b.id);
+
+			const bookAuthors = await db
+				.select({
+					bookId: bookAuthor.bookId,
+					authorId: author.id,
+					authorName: author.name,
+				})
+				.from(bookAuthor)
+				.innerJoin(author, eq(author.id, bookAuthor.authorId))
+				.where(inArray(bookAuthor.bookId, bookIds));
+
+			// Map authors to books
+			const authorsByBook = new Map<number, { id: number; name: string }[]>();
+			for (const ba of bookAuthors) {
+				if (!authorsByBook.has(ba.bookId)) {
+					authorsByBook.set(ba.bookId, []);
+				}
+				authorsByBook.get(ba.bookId)!.push({
+					id: ba.authorId,
+					name: ba.authorName,
+				});
+			}
+
+			const books = ratedBooks.map((b) => ({
+				id: b.id,
+				title: b.title,
+				subtitle: b.subtitle,
+				coverUrl: b.coverUrl,
+				pageCount: b.pageCount,
+				publisher: b.publisher,
+				datePublished: b.datePublished,
+				synopsis: b.synopsis,
+				addCount: b.addCount,
+				avgRating: b.avgRating,
+				reviewCount: b.reviewCount,
+				authors: authorsByBook.get(b.id) || [],
+			}));
+
+			return {
+				books,
+				hasMore: books.length === limit,
+			};
 		}),
 };
