@@ -123,11 +123,13 @@ export function BookCardCompact({
 					</div>
 				)}
 			</Link>
-			<div className="mt-2 flex flex-col flex-1">
-				<h3 className="text-sm font-medium leading-tight line-clamp-2 h-10 group-hover:text-primary transition-colors">
-					{title}
-				</h3>
-				<div className="mt-auto space-y-1">
+			<div className="mt-2 flex flex-col">
+				<div className="h-10 overflow-hidden">
+					<h3 className="text-sm font-medium leading-tight line-clamp-2 group-hover:text-primary transition-colors" title={title}>
+						{title}
+					</h3>
+				</div>
+				<div className="mt-1 space-y-1">
 					<Progress value={progress} />
 					<div className="flex items-center justify-between">
 						<span className="text-xs text-muted-foreground">{progress}%</span>
