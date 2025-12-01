@@ -52,7 +52,7 @@ export function BookTabs({ bookId, book, activeTab, onTabChange }: BookTabsProps
 			</TabsList>
 
 			<TabsContent value="overview" className="mt-6">
-				<OverviewTab bookId={bookId} book={book} />
+				<OverviewTab bookId={bookId} book={book} onNavigateToTab={onTabChange} />
 			</TabsContent>
 
 			<TabsContent value="characters" className="mt-6">

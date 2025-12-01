@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { Users, FileText, BookText, Star, ChevronRight } from "lucide-react";
 import { orpc } from "@/utils/orpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,9 +36,10 @@ interface Book {
 interface OverviewTabProps {
 	bookId: number;
 	book: Book;
+	onNavigateToTab?: (tab: string) => void;
 }
 
-export function OverviewTab({ bookId, book }: OverviewTabProps) {
+export function OverviewTab({ bookId, book, onNavigateToTab }: OverviewTabProps) {
 	// Fetch characters preview
 	const { data: characters, isLoading: isLoadingCharacters } = useQuery(
 		orpc.character.getByBookId.queryOptions({ input: { bookId, limit: 5 } })
@@ -77,19 +77,13 @@ export function OverviewTab({ bookId, book }: OverviewTabProps) {
 							Characters
 						</CardTitle>
 						{characters && characters.length > 0 && (
-							<Link
-								href="#"
-								onClick={(e) => {
-									e.preventDefault();
-									document
-										.querySelector('[value="characters"]')
-										?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-								}}
+							<button
+								onClick={() => onNavigateToTab?.("characters")}
 								className="text-sm text-primary hover:underline flex items-center"
 							>
 								View all
 								<ChevronRight className="h-4 w-4" />
-							</Link>
+							</button>
 						)}
 					</CardHeader>
 					<CardContent>
@@ -136,19 +130,13 @@ export function OverviewTab({ bookId, book }: OverviewTabProps) {
 							)}
 						</CardTitle>
 						{reviews && reviews.length > 0 && (
-							<Link
-								href="#"
-								onClick={(e) => {
-									e.preventDefault();
-									document
-										.querySelector('[value="reviews"]')
-										?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-								}}
+							<button
+								onClick={() => onNavigateToTab?.("reviews")}
 								className="text-sm text-primary hover:underline flex items-center"
 							>
 								View all
 								<ChevronRight className="h-4 w-4" />
-							</Link>
+							</button>
 						)}
 					</CardHeader>
 					<CardContent>
