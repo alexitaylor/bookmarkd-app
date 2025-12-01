@@ -434,65 +434,85 @@ const app = new Elysia()
 
 ### 7.1 Entity Relationship Diagram
 
+For detailed ER diagrams with Mermaid, see [packages/db/README.md](../packages/db/README.md).
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           AUTHENTICATION                                     │
-│                                                                              │
-│   ┌────────────┐      ┌────────────┐      ┌────────────┐                    │
-│   │    user    │──1:N─│  session   │      │  account   │                    │
-│   │            │──1:N─│            │      │   (OAuth)  │                    │
-│   │ - id       │      │ - id       │      │ - id       │                    │
-│   │ - email    │      │ - token    │      │ - provider │                    │
-│   │ - name     │      │ - userId   │      │ - userId   │                    │
-│   │ - image    │      │ - expiresAt│      │ - tokens   │                    │
-│   └────────────┘      └────────────┘      └────────────┘                    │
-│         │                                                                    │
-│         │                                                                    │
-└─────────┼────────────────────────────────────────────────────────────────────┘
-          │
-          │ Future Extensions
-          ▼
+│   user ──┬── session                                                         │
+│          ├── account (OAuth)                                                 │
+│          └── user_role                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           BOOK DOMAIN                                        │
-│                                                                              │
-│   ┌────────────┐      ┌────────────┐      ┌────────────┐                    │
-│   │    book    │──1:N─│ character  │──1:N─│   alias    │                    │
-│   │            │      │            │      │            │                    │
-│   │ - id       │      │ - id       │      │ - id       │                    │
-│   │ - title    │      │ - name     │      │ - name     │                    │
-│   │ - isbn     │      │ - bookId   │      │ - charId   │                    │
-│   │ - synopsis │      │ - desc     │      │            │                    │
-│   └────────────┘      └────────────┘      └────────────┘                    │
-│         │                    │                                               │
-│         │ 1:N                │ N:N                                           │
-│         ▼                    ▼                                               │
-│   ┌────────────┐      ┌────────────┐                                        │
-│   │  chapter   │      │relationship│                                        │
-│   │            │      │            │                                        │
-│   │ - id       │      │ - charId1  │                                        │
-│   │ - title    │      │ - charId2  │                                        │
-│   │ - number   │      │ - type     │                                        │
-│   └────────────┘      └────────────┘                                        │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
+│   book ──┬── book_author ── author                                           │
+│          ├── book_genre ── genre (hierarchical)                              │
+│          ├── chapter                                                         │
+│          └── character ── character_alias                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           USER ACTIVITY                                      │
+│   user ──┬── user_book (reading status/progress)                             │
+│          ├── note (chapter-based notes)                                      │
+│          └── vocabulary (word lists)                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SOCIAL                                             │
+│   user ──┬── review ── review_vote                                           │
+│          ├── comment (threaded, polymorphic)                                 │
+│          └── reaction (polymorphic)                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 7.2 Current Schema (MVP)
+### 7.2 Database Schema
+
+For complete ER diagrams, see [packages/db/README.md](../packages/db/README.md).
 
 **Authentication Tables (Better-Auth managed):**
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| `user` | User identity | id, email, name, image, createdAt |
+| `user` | User identity + profile | id, email, name, displayName, bio, avatarUrl |
 | `session` | Active sessions | id, token, userId, expiresAt, ipAddress |
 | `account` | OAuth connections | id, providerId, userId, accessToken |
 | `verification` | Email tokens | id, identifier, value, expiresAt |
+| `user_role` | User roles | id, userId, role (ADMIN/MODERATOR/USER) |
 
-**Application Tables:**
+**Book Domain Tables:**
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| `todo` | Demo todo items | id, text, completed |
+| `book` | Book metadata | id, title, isbn, synopsis, coverUrl, pageCount |
+| `author` | Authors | id, name |
+| `book_author` | Book-Author junction | bookId, authorId |
+| `genre` | Hierarchical genres | id, name, parentId (self-ref) |
+| `book_genre` | Book-Genre junction | bookId, genreId |
+| `chapter` | Book chapters | id, bookId, number, title, startPage |
+| `character` | Book characters | id, bookId, name, description, aiGenerated |
+| `character_alias` | Character aliases | id, characterId, alias |
+
+**User Reading Tables:**
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `user_book` | Reading status/progress | userId, bookId, status, currentPage, rating |
+| `note` | Chapter-based notes | userId, bookId, chapterId, content, isPublic |
+| `vocabulary` | Personal word lists | userId, bookId, word, definition, learned |
+
+**Social Tables:**
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `review` | Book reviews | userId, bookId, rating, content |
+| `review_vote` | Review helpfulness | reviewId, userId, value (+1/-1) |
+| `comment` | Threaded comments | userId, content, bookId/reviewId/noteId/parentId |
+| `reaction` | Emoji reactions | userId, type, commentId/reviewId/noteId |
 
 ### 7.3 Drizzle Configuration
 
@@ -600,6 +620,8 @@ export const protectedProcedure = publicProcedure.use(
 
 ### 9.1 oRPC Structure
 
+For complete API reference, see [docs/api-reference.md](./api-reference.md).
+
 ```
 packages/api/src/
 ├── index.ts              # Procedure definitions
@@ -611,15 +633,15 @@ packages/api/src/
 │
 └── routers/
     ├── index.ts          # AppRouter export
-    │   ├── healthCheck   # Health check endpoint
-    │   ├── privateData   # Protected example
-    │   └── todo          # Todo router
-    │
-    └── todo.ts           # Todo CRUD operations
-        ├── getAll        # List todos
-        ├── create        # Create todo
-        ├── toggle        # Toggle completion
-        └── delete        # Delete todo
+    ├── book.ts           # Book CRUD + search
+    ├── author.ts         # Author CRUD + search
+    ├── genre.ts          # Genre CRUD + tree
+    ├── character.ts      # Character CRUD + aliases
+    ├── note.ts           # User notes (protected)
+    ├── vocabulary.ts     # Word lists (protected)
+    ├── userBook.ts       # Reading tracking (protected)
+    ├── review.ts         # Reviews + voting
+    └── todo.ts           # Demo todo CRUD
 ```
 
 ### 9.2 Procedure Pattern
