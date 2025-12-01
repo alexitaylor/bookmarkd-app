@@ -37,7 +37,8 @@ export function ReadingGoalProgress({ className }: ReadingGoalProgressProps) {
 		mutationFn: (goal: number) => client.userBook.setReadingGoal({ goal }),
 		onSuccess: () => {
 			toast.success("Reading goal set!");
-			queryClient.invalidateQueries({ queryKey: ["userBook", "getReadingGoal"] });
+			// Invalidate all userBook queries to refresh the reading goal data
+			queryClient.invalidateQueries({ queryKey: [["userBook"]] });
 			setIsOpen(false);
 			setGoalInput("");
 		},
