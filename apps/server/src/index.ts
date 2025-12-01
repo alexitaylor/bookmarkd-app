@@ -9,7 +9,7 @@ import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { convertToModelMessages, streamText } from "ai";
+import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { Elysia } from "elysia";
 
 const rpcHandler = new RPCHandler(appRouter, {
@@ -63,7 +63,7 @@ new Elysia()
 		return response ?? new Response("Not Found", { status: 404 });
 	})
 	.post("/ai", async (context) => {
-		const body = await context.request.json();
+		const body = (await context.request.json()) as { messages?: UIMessage[] };
 		const uiMessages = body.messages || [];
 		const result = streamText({
 			model: google("gemini-2.5-flash"),
