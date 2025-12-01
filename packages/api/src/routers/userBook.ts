@@ -79,6 +79,7 @@ export const userBookRouter = {
 			z.object({
 				bookId: z.number(),
 				status: bookStatusSchema,
+				currentPage: z.number().int().min(0).optional(),
 			}),
 		)
 		.handler(async ({ input, context }) => {
@@ -99,6 +100,7 @@ export const userBookRouter = {
 			const now = new Date();
 			let startedAt = existing?.startedAt;
 			let finishedAt = existing?.finishedAt;
+			let currentPage = input.currentPage ?? existing?.currentPage;
 
 			// Update timestamps based on status change
 			if (input.status === "CurrentlyReading" && !startedAt) {
@@ -110,6 +112,7 @@ export const userBookRouter = {
 			if (input.status === "WantToRead") {
 				startedAt = null;
 				finishedAt = null;
+				currentPage = 0;
 			}
 
 			if (existing) {
@@ -120,6 +123,7 @@ export const userBookRouter = {
 						status: input.status,
 						startedAt,
 						finishedAt,
+						currentPage,
 					})
 					.where(eq(userBook.id, existing.id))
 					.returning();
@@ -135,6 +139,7 @@ export const userBookRouter = {
 					status: input.status,
 					startedAt,
 					finishedAt,
+					currentPage: currentPage ?? 0,
 				})
 				.returning();
 

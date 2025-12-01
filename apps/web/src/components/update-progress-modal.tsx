@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -37,13 +37,18 @@ export function UpdateProgressModal({
 	const [page, setPage] = useState(currentPage.toString());
 	const queryClient = useQueryClient();
 
+	// Sync local state when currentPage prop changes
+	useEffect(() => {
+		setPage(currentPage.toString());
+	}, [currentPage]);
+
 	const updateProgress = useMutation({
 		mutationFn: async (newPage: number) => {
 			return client.userBook.updateProgress({ bookId, currentPage: newPage });
 		},
 		onSuccess: () => {
 			toast.success("Progress updated!");
-			queryClient.invalidateQueries({ queryKey: ["userBook"] });
+			queryClient.invalidateQueries({ queryKey: [["userBook"]] });
 			onOpenChange(false);
 		},
 		onError: (error) => {

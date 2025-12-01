@@ -9,12 +9,14 @@ import {
 	CheckCircle2,
 	XCircle,
 	ChevronDown,
+	Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
@@ -67,7 +69,7 @@ const statusConfig: Record<
 	None: {
 		label: "Add to Shelf",
 		icon: BookmarkPlus,
-		color: "text-muted-foreground",
+		color: "",
 	},
 };
 
@@ -87,23 +89,45 @@ export function ReadingStatusSection({
 			: 0;
 
 	const statusMutation = useMutation({
-		mutationFn: (status: BookStatus) =>
-			client.userBook.updateStatus({ bookId, status }),
-		onSuccess: (_, status) => {
+		mutationFn: ({ status, currentPage }: { status: BookStatus; currentPage?: number }) =>
+			client.userBook.updateStatus({ bookId, status, currentPage }),
+		onSuccess: (_, { status }) => {
 			const config = statusConfig[status];
 			toast.success(`Book marked as "${config.label}"`);
-			queryClient.invalidateQueries({ queryKey: ["userBook", "getByBookId"] });
-			queryClient.invalidateQueries({ queryKey: ["userBook", "getShelves"] });
-			queryClient.invalidateQueries({ queryKey: ["userBook", "getStats"] });
+			// Invalidate all userBook queries to refresh the data
+			queryClient.invalidateQueries({ queryKey: [["userBook"]] });
 		},
 		onError: (error) => {
 			toast.error(`Failed to update status: ${error.message}`);
 		},
 	});
 
+	const removeMutation = useMutation({
+		mutationFn: () => client.userBook.remove({ bookId }),
+		onSuccess: () => {
+			toast.success("Book removed from shelf");
+			queryClient.invalidateQueries({ queryKey: [["userBook"]] });
+		},
+		onError: (error) => {
+			toast.error(`Failed to remove book: ${error.message}`);
+		},
+	});
+
 	const handleStatusChange = (status: BookStatus) => {
 		if (status === currentStatus) return;
-		statusMutation.mutate(status);
+		// When marking as "Read", set progress to 100% (all pages read)
+		// When changing from "Read" to another status, reset progress to 0
+		let newCurrentPage: number | undefined;
+		if (status === "Read" && pageCount) {
+			newCurrentPage = pageCount;
+		} else if (currentStatus === "Read") {
+			newCurrentPage = 0;
+		}
+		statusMutation.mutate({ status, currentPage: newCurrentPage });
+	};
+
+	const handleRemove = () => {
+		removeMutation.mutate();
 	};
 
 	const StatusIcon = statusConfig[currentStatus].icon;
@@ -115,13 +139,13 @@ export function ReadingStatusSection({
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button
-							variant={currentStatus === "None" ? "default" : "outline"}
+							variant="outline"
 							size="lg"
 							className={cn(
 								"min-w-[200px] justify-between",
 								currentStatus !== "None" && statusConfig[currentStatus].color
 							)}
-							disabled={statusMutation.isPending}
+							disabled={statusMutation.isPending || removeMutation.isPending}
 						>
 							<span className="flex items-center gap-2">
 								<StatusIcon className="h-4 w-4" />
@@ -154,6 +178,18 @@ export function ReadingStatusSection({
 									</DropdownMenuItem>
 								);
 							})}
+						{currentStatus !== "None" && (
+							<>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onClick={handleRemove}
+									className="cursor-pointer text-destructive focus:text-destructive"
+								>
+									<Trash2 className="mr-2 h-4 w-4" />
+									Remove from Shelf
+								</DropdownMenuItem>
+							</>
+						)}
 					</DropdownMenuContent>
 				</DropdownMenu>
 
