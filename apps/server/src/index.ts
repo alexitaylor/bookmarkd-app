@@ -1,16 +1,16 @@
 import "dotenv/config";
-import { Elysia } from "elysia";
-import { cors } from "@elysiajs/cors";
 import { google } from "@ai-sdk/google";
-import { convertToModelMessages, streamText } from "ai";
+import { createContext } from "@bookmarkd/api/context";
+import { appRouter } from "@bookmarkd/api/routers/index";
+import { auth } from "@bookmarkd/auth";
+import { cors } from "@elysiajs/cors";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { RPCHandler } from "@orpc/server/fetch";
 import { onError } from "@orpc/server";
-import { appRouter } from "@bookmarkd/api/routers/index";
-import { createContext } from "@bookmarkd/api/context";
-import { auth } from "@bookmarkd/auth";
+import { RPCHandler } from "@orpc/server/fetch";
+import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
+import { convertToModelMessages, streamText } from "ai";
+import { Elysia } from "elysia";
 
 const rpcHandler = new RPCHandler(appRouter, {
 	interceptors: [
@@ -32,7 +32,7 @@ const apiHandler = new OpenAPIHandler(appRouter, {
 	],
 });
 
-const app = new Elysia()
+new Elysia()
 	.use(
 		cors({
 			origin: process.env.CORS_ORIGIN || "",

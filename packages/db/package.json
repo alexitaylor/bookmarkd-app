@@ -1,32 +1,34 @@
 {
-  "name": "@bookmarkd/db",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
-    }
-  },
-  "scripts": {
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
-  },
-  "devDependencies": {
-    "drizzle-kit": "^0.31.2",
-    "@types/pg": "^8.11.11",
-    "@bookmarkd/config": "workspace:*"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
-    "drizzle-orm": "catalog:",
-    "pg": "^8.14.1",
-    "dotenv": "catalog:",
-    "zod": "^4.1.11"
-  }
+	"name": "@bookmarkd/db",
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		},
+		"./*": {
+			"default": "./src/*.ts"
+		}
+	},
+	"scripts": {
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:seed": "bun run src/seed/index.ts",
+		"check-types": "tsc -b"
+	},
+	"devDependencies": {
+		"drizzle-kit": "^0.31.2",
+		"@types/pg": "^8.11.11",
+		"@bookmarkd/config": "workspace:*"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"dependencies": {
+		"drizzle-orm": "catalog:",
+		"pg": "^8.14.1",
+		"dotenv": "catalog:",
+		"zod": "^4.1.11"
+	}
 }
