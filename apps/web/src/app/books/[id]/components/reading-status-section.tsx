@@ -90,6 +90,15 @@ export function ReadingStatusSection({
 			? Math.round((currentPage / pageCount) * 100)
 			: 0;
 
+	// Get progress bar color based on percentage
+	const getProgressColor = (percent: number) => {
+		if (percent >= 100) return "bg-green-500";
+		if (percent >= 75) return "bg-emerald-500";
+		if (percent >= 50) return "bg-yellow-500";
+		if (percent >= 25) return "bg-orange-500";
+		return "bg-red-500";
+	};
+
 	const statusMutation = useMutation({
 		mutationFn: ({ status, currentPage }: { status: BookStatus; currentPage?: number }) =>
 			client.userBook.updateStatus({ bookId, status, currentPage }),
@@ -217,7 +226,11 @@ export function ReadingStatusSection({
 						<span className="text-muted-foreground">Reading progress</span>
 						<span className="font-medium">{progress}%</span>
 					</div>
-					<Progress value={progress} className="h-2" />
+					<Progress
+						value={progress}
+						className="h-2"
+						indicatorClassName={getProgressColor(progress)}
+					/>
 					<p className="text-sm text-muted-foreground">
 						{currentPage} of {pageCount} pages
 					</p>
