@@ -36,7 +36,7 @@ interface GenreLinksProps {
 
 export function GenreLinks({ className }: GenreLinksProps) {
 	const { data: genres, isLoading } = useQuery(
-		orpc.genre.getAll.queryOptions({ topLevelOnly: true })
+		orpc.genre.getPopular.queryOptions({ limit: 20 })
 	);
 
 	if (isLoading) {

@@ -1,7 +1,7 @@
 import { db } from "@bookmarkd/db";
 import { book } from "@bookmarkd/db/schema/book";
 import { bookGenre, genre } from "@bookmarkd/db/schema/genre";
-import { eq, isNull } from "drizzle-orm";
+import { desc, eq, isNull, sql } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure, publicProcedure } from "../index";
 
@@ -44,6 +44,34 @@ export const genreRouter = {
 			}
 
 			return await db.select().from(genre).orderBy(genre.name);
+		}),
+
+	// Get popular genres sorted by book count
+	getPopular: publicProcedure
+		.input(
+			z
+				.object({
+					limit: z.number().int().min(1).max(50).default(20),
+				})
+				.optional(),
+		)
+		.handler(async ({ input }) => {
+			const { limit = 20 } = input ?? {};
+
+			const popularGenres = await db
+				.select({
+					id: genre.id,
+					name: genre.name,
+					parentId: genre.parentId,
+					bookCount: sql<number>`count(${bookGenre.bookId})`.as("book_count"),
+				})
+				.from(genre)
+				.leftJoin(bookGenre, eq(bookGenre.genreId, genre.id))
+				.groupBy(genre.id)
+				.orderBy(desc(sql`count(${bookGenre.bookId})`), genre.name)
+				.limit(limit);
+
+			return popularGenres;
 		}),
 
 	// Get genre by ID with subgenres and books
