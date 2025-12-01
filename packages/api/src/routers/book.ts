@@ -7,6 +7,11 @@ import { userBook } from "@bookmarkd/db/schema/user-book";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure, publicProcedure } from "../index";
+import {
+	fetchBookByISBN,
+	searchBooksFromISBNdb,
+} from "../services/isbndb-client";
+import { upsertExternalBook } from "../services/book-ingestion";
 
 // Input schemas
 const createBookSchema = z.object({
@@ -27,6 +32,196 @@ const createBookSchema = z.object({
 const updateBookSchema = createBookSchema.partial().extend({
 	id: z.number(),
 });
+
+// Helper function to search local database
+async function searchLocalBooks(
+	searchQuery: string,
+	limit: number
+): Promise<
+	{
+		id: number;
+		title: string;
+		subtitle: string | null;
+		isbn: string | null;
+		isbn13: string | null;
+		synopsis: string | null;
+		coverUrl: string | null;
+		publisher: string | null;
+		pageCount: number | null;
+		language: string | null;
+		datePublished: string | null;
+		createdAt: Date;
+		updatedAt: Date;
+		authors: { id: number; name: string }[];
+	}[]
+> {
+	// Normalize the query: remove periods/dots for matching "JRR" to "J.R.R."
+	const normalizedQuery = searchQuery.replace(/\./g, "");
+	const ilikePattern = `%${searchQuery}%`;
+
+	// Step 1: Find books by title or subtitle (ILIKE for substring match)
+	const booksByTitle = await db
+		.select()
+		.from(book)
+		.where(
+			sql`${book.title} ILIKE ${ilikePattern} OR ${book.subtitle} ILIKE ${ilikePattern}`
+		)
+		.limit(limit);
+
+	// Step 2: Find books by author name (ILIKE + normalized for dots)
+	const booksByAuthor = await db
+		.select({
+			id: book.id,
+			title: book.title,
+			subtitle: book.subtitle,
+			isbn: book.isbn,
+			isbn13: book.isbn13,
+			synopsis: book.synopsis,
+			coverUrl: book.coverUrl,
+			publisher: book.publisher,
+			pageCount: book.pageCount,
+			language: book.language,
+			datePublished: book.datePublished,
+			createdAt: book.createdAt,
+			updatedAt: book.updatedAt,
+		})
+		.from(book)
+		.innerJoin(bookAuthor, eq(bookAuthor.bookId, book.id))
+		.innerJoin(author, eq(author.id, bookAuthor.authorId))
+		.where(
+			sql`${author.name} ILIKE ${ilikePattern} OR REPLACE(${author.name}, '.', '') ILIKE ${"%" + normalizedQuery + "%"}`
+		)
+		.limit(limit);
+
+	// Step 3: If we have few results, try fuzzy matching with pg_trgm
+	let fuzzyBooks: typeof booksByTitle = [];
+	if (booksByTitle.length + booksByAuthor.length < limit) {
+		const fuzzyResults = await db.execute<{
+			id: number;
+			title: string;
+			subtitle: string | null;
+			isbn: string | null;
+			isbn13: string | null;
+			synopsis: string | null;
+			cover_url: string | null;
+			publisher: string | null;
+			page_count: number | null;
+			language: string | null;
+			date_published: string | null;
+			created_at: Date;
+			updated_at: Date;
+			similarity_score: number;
+		}>(sql`
+			SELECT DISTINCT
+				b.id,
+				b.title,
+				b.subtitle,
+				b.isbn,
+				b.isbn13,
+				b.synopsis,
+				b.cover_url,
+				b.publisher,
+				b.page_count,
+				b.language,
+				b.date_published,
+				b.created_at,
+				b.updated_at,
+				GREATEST(
+					similarity(b.title, ${searchQuery}),
+					COALESCE(similarity(b.subtitle, ${searchQuery}), 0),
+					COALESCE((
+						SELECT MAX(similarity(a.name, ${searchQuery}))
+						FROM author a
+						INNER JOIN book_author ba ON ba.author_id = a.id
+						WHERE ba.book_id = b.id
+					), 0)
+				) as similarity_score
+			FROM book b
+			WHERE
+				similarity(b.title, ${searchQuery}) > 0.2
+				OR similarity(b.subtitle, ${searchQuery}) > 0.2
+				OR EXISTS (
+					SELECT 1 FROM author a
+					INNER JOIN book_author ba ON ba.author_id = a.id
+					WHERE ba.book_id = b.id
+					AND (
+						similarity(a.name, ${searchQuery}) > 0.2
+						OR similarity(REPLACE(a.name, '.', ''), ${normalizedQuery}) > 0.2
+					)
+				)
+			ORDER BY similarity_score DESC
+			LIMIT ${limit}
+		`);
+
+		fuzzyBooks = fuzzyResults.rows.map((r) => ({
+			id: r.id,
+			title: r.title,
+			subtitle: r.subtitle,
+			isbn: r.isbn,
+			isbn13: r.isbn13,
+			synopsis: r.synopsis,
+			coverUrl: r.cover_url,
+			publisher: r.publisher,
+			pageCount: r.page_count,
+			language: r.language,
+			datePublished: r.date_published,
+			createdAt: r.created_at,
+			updatedAt: r.updated_at,
+		}));
+	}
+
+	// Combine and deduplicate results (title matches first, then author, then fuzzy)
+	const allBooks = [...booksByTitle, ...booksByAuthor, ...fuzzyBooks];
+	const uniqueBooks = Array.from(
+		new Map(allBooks.map((b) => [b.id, b])).values()
+	).slice(0, limit);
+
+	if (uniqueBooks.length === 0) {
+		return [];
+	}
+
+	// Get authors for the search results
+	const bookIds = uniqueBooks.map((b) => b.id);
+
+	const resultAuthors = await db
+		.select({
+			bookId: bookAuthor.bookId,
+			authorId: author.id,
+			authorName: author.name,
+		})
+		.from(bookAuthor)
+		.innerJoin(author, eq(author.id, bookAuthor.authorId))
+		.where(inArray(bookAuthor.bookId, bookIds));
+
+	// Map authors to books
+	const authorsByBook = new Map<number, { id: number; name: string }[]>();
+	for (const ba of resultAuthors) {
+		if (!authorsByBook.has(ba.bookId)) {
+			authorsByBook.set(ba.bookId, []);
+		}
+		authorsByBook.get(ba.bookId)!.push({
+			id: ba.authorId,
+			name: ba.authorName,
+		});
+	}
+
+	return uniqueBooks.map((b) => ({
+		id: b.id,
+		title: b.title,
+		subtitle: b.subtitle,
+		isbn: b.isbn,
+		isbn13: b.isbn13,
+		synopsis: b.synopsis,
+		coverUrl: b.coverUrl,
+		publisher: b.publisher,
+		pageCount: b.pageCount,
+		language: b.language,
+		datePublished: b.datePublished,
+		createdAt: b.createdAt,
+		updatedAt: b.updatedAt,
+		authors: authorsByBook.get(b.id) || [],
+	}));
+}
 
 export const bookRouter = {
 	// Get all books with pagination
@@ -94,6 +289,7 @@ export const bookRouter = {
 		}),
 
 	// Search books by title, author name, or ISBN using trigram similarity
+	// Only searches local DB - use searchExternal for ISBNdb
 	search: publicProcedure
 		.input(
 			z.object({
@@ -104,172 +300,40 @@ export const bookRouter = {
 		.handler(async ({ input }) => {
 			const searchQuery = input.query.trim();
 
-			// Normalize the query: remove periods/dots for matching "JRR" to "J.R.R."
-			const normalizedQuery = searchQuery.replace(/\./g, "");
-			const ilikePattern = `%${searchQuery}%`;
+			// Search local DB only
+			const localResults = await searchLocalBooks(searchQuery, input.limit);
 
-			// Step 1: Find books by title or subtitle (ILIKE for substring match)
-			const booksByTitle = await db
-				.select()
-				.from(book)
-				.where(
-					sql`${book.title} ILIKE ${ilikePattern} OR ${book.subtitle} ILIKE ${ilikePattern}`,
-				)
-				.limit(input.limit);
+			return {
+				local: localResults,
+				hasExternalResults: localResults.length === 0,
+			};
+		}),
 
-			// Step 2: Find books by author name (ILIKE + normalized for dots)
-			const booksByAuthor = await db
-				.select({
-					id: book.id,
-					title: book.title,
-					subtitle: book.subtitle,
-					isbn: book.isbn,
-					isbn13: book.isbn13,
-					synopsis: book.synopsis,
-					coverUrl: book.coverUrl,
-					publisher: book.publisher,
-					pageCount: book.pageCount,
-					language: book.language,
-					datePublished: book.datePublished,
-					createdAt: book.createdAt,
-					updatedAt: book.updatedAt,
-				})
-				.from(book)
-				.innerJoin(bookAuthor, eq(bookAuthor.bookId, book.id))
-				.innerJoin(author, eq(author.id, bookAuthor.authorId))
-				.where(
-					sql`${author.name} ILIKE ${ilikePattern} OR REPLACE(${author.name}, '.', '') ILIKE ${"%" + normalizedQuery + "%"}`,
-				)
-				.limit(input.limit);
-
-			// Step 3: If we have few results, try fuzzy matching with pg_trgm
-			let fuzzyBooks: typeof booksByTitle = [];
-			if (booksByTitle.length + booksByAuthor.length < input.limit) {
-				const fuzzyResults = await db.execute<{
-					id: number;
-					title: string;
-					subtitle: string | null;
-					isbn: string | null;
-					isbn13: string | null;
-					synopsis: string | null;
-					cover_url: string | null;
-					publisher: string | null;
-					page_count: number | null;
-					language: string | null;
-					date_published: string | null;
-					created_at: Date;
-					updated_at: Date;
-					similarity_score: number;
-				}>(sql`
-					SELECT DISTINCT
-						b.id,
-						b.title,
-						b.subtitle,
-						b.isbn,
-						b.isbn13,
-						b.synopsis,
-						b.cover_url,
-						b.publisher,
-						b.page_count,
-						b.language,
-						b.date_published,
-						b.created_at,
-						b.updated_at,
-						GREATEST(
-							similarity(b.title, ${searchQuery}),
-							COALESCE(similarity(b.subtitle, ${searchQuery}), 0),
-							COALESCE((
-								SELECT MAX(similarity(a.name, ${searchQuery}))
-								FROM author a
-								INNER JOIN book_author ba ON ba.author_id = a.id
-								WHERE ba.book_id = b.id
-							), 0)
-						) as similarity_score
-					FROM book b
-					WHERE
-						similarity(b.title, ${searchQuery}) > 0.2
-						OR similarity(b.subtitle, ${searchQuery}) > 0.2
-						OR EXISTS (
-							SELECT 1 FROM author a
-							INNER JOIN book_author ba ON ba.author_id = a.id
-							WHERE ba.book_id = b.id
-							AND (
-								similarity(a.name, ${searchQuery}) > 0.2
-								OR similarity(REPLACE(a.name, '.', ''), ${normalizedQuery}) > 0.2
-							)
-						)
-					ORDER BY similarity_score DESC
-					LIMIT ${input.limit}
-				`);
-
-				fuzzyBooks = fuzzyResults.rows.map((r) => ({
-					id: r.id,
-					title: r.title,
-					subtitle: r.subtitle,
-					isbn: r.isbn,
-					isbn13: r.isbn13,
-					synopsis: r.synopsis,
-					coverUrl: r.cover_url,
-					publisher: r.publisher,
-					pageCount: r.page_count,
-					language: r.language,
-					datePublished: r.date_published,
-					createdAt: r.created_at,
-					updatedAt: r.updated_at,
-				}));
+	// Add a book by ISBN from ISBNdb
+	addFromISBN: publicProcedure
+		.input(z.object({ isbn: z.string().min(10).max(17) }))
+		.handler(async ({ input }) => {
+			const externalBook = await fetchBookByISBN(input.isbn);
+			if (!externalBook) {
+				throw new Error(`Book with ISBN ${input.isbn} not found`);
 			}
 
-			// Combine and deduplicate results (title matches first, then author, then fuzzy)
-			const allBooks = [...booksByTitle, ...booksByAuthor, ...fuzzyBooks];
-			const uniqueBooks = Array.from(
-				new Map(allBooks.map((b) => [b.id, b])).values(),
-			).slice(0, input.limit);
+			const upsertedBook = await upsertExternalBook(externalBook);
+			return upsertedBook;
+		}),
 
-			if (uniqueBooks.length === 0) {
-				return [];
-			}
-
-			// Get authors for the search results
-			const bookIds = uniqueBooks.map((b) => b.id);
-
-			const resultAuthors = await db
-				.select({
-					bookId: bookAuthor.bookId,
-					authorId: author.id,
-					authorName: author.name,
-				})
-				.from(bookAuthor)
-				.innerJoin(author, eq(author.id, bookAuthor.authorId))
-				.where(inArray(bookAuthor.bookId, bookIds));
-
-			// Map authors to books
-			const authorsByBook = new Map<number, { id: number; name: string }[]>();
-			for (const ba of resultAuthors) {
-				if (!authorsByBook.has(ba.bookId)) {
-					authorsByBook.set(ba.bookId, []);
-				}
-				authorsByBook.get(ba.bookId)!.push({
-					id: ba.authorId,
-					name: ba.authorName,
-				});
-			}
-
-			return uniqueBooks.map((b) => ({
-				id: b.id,
-				title: b.title,
-				subtitle: b.subtitle,
-				isbn: b.isbn,
-				isbn13: b.isbn13,
-				synopsis: b.synopsis,
-				coverUrl: b.coverUrl,
-				publisher: b.publisher,
-				pageCount: b.pageCount,
-				language: b.language,
-				datePublished: b.datePublished,
-				createdAt: b.createdAt,
-				updatedAt: b.updatedAt,
-				authors: authorsByBook.get(b.id) || [],
-			}));
+	// Search external ISBNdb API without storing results
+	// User must explicitly call addFromISBN to import a book
+	searchExternal: publicProcedure
+		.input(
+			z.object({
+				query: z.string().min(1),
+				limit: z.number().int().min(1).max(50).default(20),
+			})
+		)
+		.handler(async ({ input }) => {
+			const results = await searchBooksFromISBNdb(input.query, input.limit);
+			return { external: results };
 		}),
 
 	// Create a new book (protected - requires auth)
