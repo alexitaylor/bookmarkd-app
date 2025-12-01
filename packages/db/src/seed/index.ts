@@ -4,6 +4,7 @@ import { seedAuthors } from "./authors";
 import { seedBooks } from "./books";
 import { seedCharacters } from "./characters";
 import { seedChapters } from "./chapters";
+import { seedUserBooks } from "./user-books";
 
 async function main() {
 	console.log("🌱 Starting database seed...\n");
@@ -24,6 +25,9 @@ async function main() {
 
 		console.log("🧑 Seeding characters...");
 		await seedCharacters(db, bookIds);
+
+		console.log("📚 Seeding user books...");
+		await seedUserBooks(db, bookIds);
 
 		console.log("\n✅ Database seeded successfully!");
 	} catch (error) {

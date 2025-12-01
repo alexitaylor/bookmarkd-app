@@ -1,7 +1,7 @@
 import { db } from "@bookmarkd/db";
 import { book } from "@bookmarkd/db/schema/book";
 import { userBook } from "@bookmarkd/db/schema/user-book";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure } from "../index";
 
@@ -263,5 +263,194 @@ export const userBookRouter = {
 			}
 
 			return { success: true, bookId: input.bookId };
+		}),
+
+	// Get user's reading stats
+	getStats: protectedProcedure.handler(async ({ context }) => {
+		const userId = context.session?.user?.id;
+		if (!userId) {
+			throw new Error("User not authenticated");
+		}
+
+		// Get start of current year
+		const currentYear = new Date().getFullYear();
+		const startOfYear = new Date(currentYear, 0, 1);
+
+		// Count books read this year
+		const [booksReadThisYear] = await db
+			.select({
+				count: sql<number>`count(*)`.as("count"),
+			})
+			.from(userBook)
+			.where(
+				and(
+					eq(userBook.userId, userId),
+					eq(userBook.status, "Read"),
+					gte(userBook.finishedAt, startOfYear),
+				),
+			);
+
+		// Sum pages read this year (from books finished this year)
+		const [pagesReadThisYear] = await db
+			.select({
+				total: sql<number>`coalesce(sum(${book.pageCount}), 0)`.as("total"),
+			})
+			.from(userBook)
+			.innerJoin(book, eq(book.id, userBook.bookId))
+			.where(
+				and(
+					eq(userBook.userId, userId),
+					eq(userBook.status, "Read"),
+					gte(userBook.finishedAt, startOfYear),
+				),
+			);
+
+		// Count currently reading
+		const [currentlyReading] = await db
+			.select({
+				count: sql<number>`count(*)`.as("count"),
+			})
+			.from(userBook)
+			.where(
+				and(
+					eq(userBook.userId, userId),
+					eq(userBook.status, "CurrentlyReading"),
+				),
+			);
+
+		return {
+			booksReadThisYear: Number(booksReadThisYear?.count || 0),
+			pagesReadThisYear: Number(pagesReadThisYear?.total || 0),
+			currentlyReading: Number(currentlyReading?.count || 0),
+		};
+	}),
+
+	// Get currently reading books with details
+	getCurrentlyReading: protectedProcedure
+		.input(
+			z
+				.object({
+					limit: z.number().int().min(1).max(20).default(6),
+				})
+				.optional(),
+		)
+		.handler(async ({ input, context }) => {
+			const userId = context.session?.user?.id;
+			if (!userId) {
+				throw new Error("User not authenticated");
+			}
+
+			const { limit = 6 } = input ?? {};
+
+			const currentBooks = await db
+				.select({
+					id: userBook.id,
+					bookId: userBook.bookId,
+					currentPage: userBook.currentPage,
+					startedAt: userBook.startedAt,
+					bookTitle: book.title,
+					bookCoverUrl: book.coverUrl,
+					bookPageCount: book.pageCount,
+				})
+				.from(userBook)
+				.innerJoin(book, eq(book.id, userBook.bookId))
+				.where(
+					and(
+						eq(userBook.userId, userId),
+						eq(userBook.status, "CurrentlyReading"),
+					),
+				)
+				.orderBy(userBook.updatedAt)
+				.limit(limit);
+
+			return currentBooks.map((b) => ({
+				...b,
+				progress:
+					b.bookPageCount && b.bookPageCount > 0
+						? Math.round((b.currentPage / b.bookPageCount) * 100)
+						: 0,
+			}));
+		}),
+
+	// Get reading goal progress
+	getReadingGoal: protectedProcedure.handler(async ({ context }) => {
+		const userId = context.session?.user?.id;
+		if (!userId) {
+			throw new Error("User not authenticated");
+		}
+
+		// Import user table
+		const { user } = await import("@bookmarkd/db/schema/auth");
+
+		// Get user's reading goal
+		const [userData] = await db
+			.select({
+				readingGoal: user.readingGoal,
+				readingGoalYear: user.readingGoalYear,
+			})
+			.from(user)
+			.where(eq(user.id, userId))
+			.limit(1);
+
+		const currentYear = new Date().getFullYear();
+		const goalYear = userData?.readingGoalYear || currentYear;
+		const goal = userData?.readingGoal || 0;
+
+		// If no goal set or goal is for a different year, return null goal
+		if (!goal || goalYear !== currentYear) {
+			return {
+				goal: null,
+				booksRead: 0,
+				year: currentYear,
+			};
+		}
+
+		// Count books read this year
+		const startOfYear = new Date(currentYear, 0, 1);
+		const [booksRead] = await db
+			.select({
+				count: sql<number>`count(*)`.as("count"),
+			})
+			.from(userBook)
+			.where(
+				and(
+					eq(userBook.userId, userId),
+					eq(userBook.status, "Read"),
+					gte(userBook.finishedAt, startOfYear),
+				),
+			);
+
+		return {
+			goal,
+			booksRead: Number(booksRead?.count || 0),
+			year: currentYear,
+		};
+	}),
+
+	// Set reading goal
+	setReadingGoal: protectedProcedure
+		.input(
+			z.object({
+				goal: z.number().int().min(1).max(365),
+			}),
+		)
+		.handler(async ({ input, context }) => {
+			const userId = context.session?.user?.id;
+			if (!userId) {
+				throw new Error("User not authenticated");
+			}
+
+			const { user } = await import("@bookmarkd/db/schema/auth");
+			const currentYear = new Date().getFullYear();
+
+			await db
+				.update(user)
+				.set({
+					readingGoal: input.goal,
+					readingGoalYear: currentYear,
+				})
+				.where(eq(user.id, userId));
+
+			return { success: true, goal: input.goal, year: currentYear };
 		}),
 };

@@ -2,9 +2,11 @@ import { db } from "@bookmarkd/db";
 import { author, bookAuthor } from "@bookmarkd/db/schema/author";
 import { book } from "@bookmarkd/db/schema/book";
 import { bookGenre, genre } from "@bookmarkd/db/schema/genre";
-import { eq, ilike } from "drizzle-orm";
+import { desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure, publicProcedure } from "../index";
+import { userBook } from "@bookmarkd/db/schema/user-book";
+import { review } from "@bookmarkd/db/schema/review";
 
 // Input schemas
 const createBookSchema = z.object({
@@ -91,7 +93,7 @@ export const bookRouter = {
 			};
 		}),
 
-	// Search books by title or author name
+	// Search books by title, author name, or ISBN using trigram similarity
 	search: publicProcedure
 		.input(
 			z.object({
@@ -100,16 +102,22 @@ export const bookRouter = {
 			}),
 		)
 		.handler(async ({ input }) => {
-			const searchPattern = `%${input.query}%`;
+			const searchQuery = input.query.trim();
 
-			// Search by title
+			// Normalize the query: remove periods/dots for matching "JRR" to "J.R.R."
+			const normalizedQuery = searchQuery.replace(/\./g, "");
+			const ilikePattern = `%${searchQuery}%`;
+
+			// Step 1: Find books by title or subtitle (ILIKE for substring match)
 			const booksByTitle = await db
 				.select()
 				.from(book)
-				.where(ilike(book.title, searchPattern))
+				.where(
+					sql`${book.title} ILIKE ${ilikePattern} OR ${book.subtitle} ILIKE ${ilikePattern}`
+				)
 				.limit(input.limit);
 
-			// Search by author name
+			// Step 2: Find books by author name (ILIKE + normalized for dots)
 			const booksByAuthor = await db
 				.select({
 					id: book.id,
@@ -129,16 +137,139 @@ export const bookRouter = {
 				.from(book)
 				.innerJoin(bookAuthor, eq(bookAuthor.bookId, book.id))
 				.innerJoin(author, eq(author.id, bookAuthor.authorId))
-				.where(ilike(author.name, searchPattern))
+				.where(
+					sql`${author.name} ILIKE ${ilikePattern} OR REPLACE(${author.name}, '.', '') ILIKE ${"%" + normalizedQuery + "%"}`
+				)
 				.limit(input.limit);
 
-			// Combine and deduplicate results
-			const allBooks = [...booksByTitle, ...booksByAuthor];
-			const uniqueBooks = Array.from(
-				new Map(allBooks.map((b) => [b.id, b])).values(),
-			);
+			// Step 3: If we have few results, try fuzzy matching with pg_trgm
+			let fuzzyBooks: typeof booksByTitle = [];
+			if (booksByTitle.length + booksByAuthor.length < input.limit) {
+				const fuzzyResults = await db.execute<{
+					id: number;
+					title: string;
+					subtitle: string | null;
+					isbn: string | null;
+					isbn13: string | null;
+					synopsis: string | null;
+					cover_url: string | null;
+					publisher: string | null;
+					page_count: number | null;
+					language: string | null;
+					date_published: string | null;
+					created_at: Date;
+					updated_at: Date;
+					similarity_score: number;
+				}>(sql`
+					SELECT DISTINCT
+						b.id,
+						b.title,
+						b.subtitle,
+						b.isbn,
+						b.isbn13,
+						b.synopsis,
+						b.cover_url,
+						b.publisher,
+						b.page_count,
+						b.language,
+						b.date_published,
+						b.created_at,
+						b.updated_at,
+						GREATEST(
+							similarity(b.title, ${searchQuery}),
+							COALESCE(similarity(b.subtitle, ${searchQuery}), 0),
+							COALESCE((
+								SELECT MAX(similarity(a.name, ${searchQuery}))
+								FROM author a
+								INNER JOIN book_author ba ON ba.author_id = a.id
+								WHERE ba.book_id = b.id
+							), 0)
+						) as similarity_score
+					FROM book b
+					WHERE
+						similarity(b.title, ${searchQuery}) > 0.2
+						OR similarity(b.subtitle, ${searchQuery}) > 0.2
+						OR EXISTS (
+							SELECT 1 FROM author a
+							INNER JOIN book_author ba ON ba.author_id = a.id
+							WHERE ba.book_id = b.id
+							AND (
+								similarity(a.name, ${searchQuery}) > 0.2
+								OR similarity(REPLACE(a.name, '.', ''), ${normalizedQuery}) > 0.2
+							)
+						)
+					ORDER BY similarity_score DESC
+					LIMIT ${input.limit}
+				`);
 
-			return uniqueBooks.slice(0, input.limit);
+				fuzzyBooks = fuzzyResults.rows.map((r) => ({
+					id: r.id,
+					title: r.title,
+					subtitle: r.subtitle,
+					isbn: r.isbn,
+					isbn13: r.isbn13,
+					synopsis: r.synopsis,
+					coverUrl: r.cover_url,
+					publisher: r.publisher,
+					pageCount: r.page_count,
+					language: r.language,
+					datePublished: r.date_published,
+					createdAt: r.created_at,
+					updatedAt: r.updated_at,
+				}));
+			}
+
+			// Combine and deduplicate results (title matches first, then author, then fuzzy)
+			const allBooks = [...booksByTitle, ...booksByAuthor, ...fuzzyBooks];
+			const uniqueBooks = Array.from(
+				new Map(allBooks.map((b) => [b.id, b])).values()
+			).slice(0, input.limit);
+
+			if (uniqueBooks.length === 0) {
+				return [];
+			}
+
+			// Get authors for the search results
+			const bookIds = uniqueBooks.map((b) => b.id);
+
+			const resultAuthors = await db
+				.select({
+					bookId: bookAuthor.bookId,
+					authorId: author.id,
+					authorName: author.name,
+				})
+				.from(bookAuthor)
+				.innerJoin(author, eq(author.id, bookAuthor.authorId))
+				.where(inArray(bookAuthor.bookId, bookIds));
+
+			// Map authors to books
+			const authorsByBook = new Map<number, { id: number; name: string }[]>();
+			for (const ba of resultAuthors) {
+				if (!authorsByBook.has(ba.bookId)) {
+					authorsByBook.set(ba.bookId, []);
+				}
+				authorsByBook.get(ba.bookId)!.push({
+					id: ba.authorId,
+					name: ba.authorName,
+				});
+			}
+
+			return uniqueBooks.map((b) => ({
+				id: b.id,
+				title: b.title,
+				subtitle: b.subtitle,
+				isbn: b.isbn,
+				isbn13: b.isbn13,
+				synopsis: b.synopsis,
+				coverUrl: b.coverUrl,
+				publisher: b.publisher,
+				pageCount: b.pageCount,
+				language: b.language,
+				datePublished: b.datePublished,
+				createdAt: b.createdAt,
+				updatedAt: b.updatedAt,
+				authors: authorsByBook.get(b.id) || [],
+			}));
 		}),
 
 	// Create a new book (protected - requires auth)
@@ -243,5 +374,128 @@ export const bookRouter = {
 			}
 
 			return { success: true, id: input.id };
+		}),
+
+	// Get popular books (most added to shelves + highest rated)
+	getPopular: publicProcedure
+		.input(
+			z
+				.object({
+					limit: z.number().int().min(1).max(50).default(12),
+				})
+				.optional(),
+		)
+		.handler(async ({ input }) => {
+			const { limit = 12 } = input ?? {};
+
+			// Get books with their add counts and average ratings
+			const popularBooks = await db
+				.select({
+					id: book.id,
+					title: book.title,
+					subtitle: book.subtitle,
+					coverUrl: book.coverUrl,
+					pageCount: book.pageCount,
+					addCount: sql<number>`count(distinct ${userBook.id})`.as("add_count"),
+					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as("avg_rating"),
+				})
+				.from(book)
+				.leftJoin(userBook, eq(userBook.bookId, book.id))
+				.leftJoin(review, eq(review.bookId, book.id))
+				.groupBy(book.id)
+				.orderBy(
+					desc(sql`count(distinct ${userBook.id})`),
+					desc(sql`coalesce(avg(${review.rating}), 0)`),
+				)
+				.limit(limit);
+
+			// Get authors for each book
+			const bookIds = popularBooks.map((b) => b.id);
+			if (bookIds.length === 0) {
+				return [];
+			}
+
+			const bookAuthors = await db
+				.select({
+					bookId: bookAuthor.bookId,
+					authorId: author.id,
+					authorName: author.name,
+				})
+				.from(bookAuthor)
+				.innerJoin(author, eq(author.id, bookAuthor.authorId));
+
+			// Map authors to books
+			const authorsByBook = new Map<number, { id: number; name: string }[]>();
+			for (const ba of bookAuthors) {
+				if (!authorsByBook.has(ba.bookId)) {
+					authorsByBook.set(ba.bookId, []);
+				}
+				authorsByBook.get(ba.bookId)!.push({
+					id: ba.authorId,
+					name: ba.authorName,
+				});
+			}
+
+			return popularBooks.map((b) => ({
+				...b,
+				authors: authorsByBook.get(b.id) || [],
+			}));
+		}),
+
+	// Get recently added books
+	getRecent: publicProcedure
+		.input(
+			z
+				.object({
+					limit: z.number().int().min(1).max(50).default(12),
+				})
+				.optional(),
+		)
+		.handler(async ({ input }) => {
+			const { limit = 12 } = input ?? {};
+
+			const recentBooks = await db
+				.select()
+				.from(book)
+				.orderBy(desc(book.createdAt))
+				.limit(limit);
+
+			if (recentBooks.length === 0) {
+				return [];
+			}
+
+			// Get authors for each book
+			const bookIds = recentBooks.map((b) => b.id);
+
+			const bookAuthors = await db
+				.select({
+					bookId: bookAuthor.bookId,
+					authorId: author.id,
+					authorName: author.name,
+				})
+				.from(bookAuthor)
+				.innerJoin(author, eq(author.id, bookAuthor.authorId))
+				.where(inArray(bookAuthor.bookId, bookIds));
+
+			// Map authors to books
+			const authorsByBook = new Map<number, { id: number; name: string }[]>();
+			for (const ba of bookAuthors) {
+				if (!authorsByBook.has(ba.bookId)) {
+					authorsByBook.set(ba.bookId, []);
+				}
+				authorsByBook.get(ba.bookId)!.push({
+					id: ba.authorId,
+					name: ba.authorName,
+				});
+			}
+
+			return recentBooks.map((b) => ({
+				id: b.id,
+				title: b.title,
+				subtitle: b.subtitle,
+				coverUrl: b.coverUrl,
+				pageCount: b.pageCount,
+				authors: authorsByBook.get(b.id) || [],
+			}));
 		}),
 };

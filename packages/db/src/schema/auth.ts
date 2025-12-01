@@ -6,6 +6,7 @@ import {
 	index,
 	serial,
 	varchar,
+	integer,
 } from "drizzle-orm/pg-core";
 import { roleEnum } from "./enums";
 
@@ -19,6 +20,9 @@ export const user = pgTable("user", {
 	displayName: varchar("display_name", { length: 100 }),
 	bio: text("bio"),
 	avatarUrl: text("avatar_url"),
+	// Reading goal
+	readingGoal: integer("reading_goal"), // Target number of books per year
+	readingGoalYear: integer("reading_goal_year"), // Year the goal applies to
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")
 		.defaultNow()
