@@ -40,6 +40,7 @@ interface ReadingStatusSectionProps {
 	bookId: number;
 	pageCount?: number | null;
 	userBook: UserBook | null | undefined;
+	onStatusChange?: (status: BookStatus) => void;
 }
 
 const statusConfig: Record<
@@ -77,6 +78,7 @@ export function ReadingStatusSection({
 	bookId,
 	pageCount,
 	userBook,
+	onStatusChange,
 }: ReadingStatusSectionProps) {
 	const [showProgressModal, setShowProgressModal] = useState(false);
 	const queryClient = useQueryClient();
@@ -96,6 +98,8 @@ export function ReadingStatusSection({
 			toast.success(`Book marked as "${config.label}"`);
 			// Invalidate all userBook queries to refresh the data
 			queryClient.invalidateQueries({ queryKey: [["userBook"]] });
+			// Notify parent of status change
+			onStatusChange?.(status);
 		},
 		onError: (error) => {
 			toast.error(`Failed to update status: ${error.message}`);

@@ -60,7 +60,7 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 			client.review.create(data),
 		onSuccess: () => {
 			toast.success("Review submitted!");
-			queryClient.invalidateQueries({ queryKey: ["review"] });
+			queryClient.invalidateQueries({ queryKey: [["review"]] });
 			setIsAddOpen(false);
 			setNewReview({ rating: 0, content: "" });
 		},
@@ -73,7 +73,7 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 		mutationFn: (id: number) => client.review.delete({ id }),
 		onSuccess: () => {
 			toast.success("Review deleted");
-			queryClient.invalidateQueries({ queryKey: ["review"] });
+			queryClient.invalidateQueries({ queryKey: [["review"]] });
 		},
 		onError: (error) => {
 			toast.error(`Failed to delete review: ${error.message}`);
@@ -84,7 +84,7 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 		mutationFn: ({ reviewId, value }: { reviewId: number; value: 1 | -1 }) =>
 			client.review.vote({ reviewId, value }),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["review", "list"] });
+			queryClient.invalidateQueries({ queryKey: [["review"]] });
 		},
 		onError: (error) => {
 			toast.error(`Failed to vote: ${error.message}`);

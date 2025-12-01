@@ -6,6 +6,7 @@ import { orpc } from "@/utils/orpc";
 import { BookHeader } from "./components/book-header";
 import { ReadingStatusSection } from "./components/reading-status-section";
 import { BookTabs } from "./components/book-tabs";
+import { WriteReviewDialog } from "./components/write-review-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Author {
@@ -40,6 +41,7 @@ interface BookDetailContentProps {
 
 export function BookDetailContent({ book }: BookDetailContentProps) {
 	const [activeTab, setActiveTab] = useState("overview");
+	const [showReviewDialog, setShowReviewDialog] = useState(false);
 
 	// Fetch user's book status
 	const { data: userBook, isLoading: isLoadingUserBook } = useQuery(
@@ -50,6 +52,12 @@ export function BookDetailContent({ book }: BookDetailContentProps) {
 	const { data: reviewStats } = useQuery(
 		orpc.review.getStats.queryOptions({ input: { bookId: book.id } })
 	);
+
+	const handleStatusChange = (status: string) => {
+		if (status === "Read") {
+			setShowReviewDialog(true);
+		}
+	};
 
 	return (
 		<div className="container mx-auto max-w-6xl px-4 py-8">
@@ -72,6 +80,7 @@ export function BookDetailContent({ book }: BookDetailContentProps) {
 						bookId={book.id}
 						pageCount={book.pageCount}
 						userBook={userBook}
+						onStatusChange={handleStatusChange}
 					/>
 				)}
 			</div>
@@ -85,6 +94,13 @@ export function BookDetailContent({ book }: BookDetailContentProps) {
 					onTabChange={setActiveTab}
 				/>
 			</div>
+
+			{/* Write Review Dialog - shown when marking book as Read */}
+			<WriteReviewDialog
+				bookId={book.id}
+				open={showReviewDialog}
+				onOpenChange={setShowReviewDialog}
+			/>
 		</div>
 	);
 }
