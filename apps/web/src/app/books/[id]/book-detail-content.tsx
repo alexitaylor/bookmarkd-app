@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useQueryState, parseAsStringLiteral } from "nuqs";
 import { orpc } from "@/utils/orpc";
 import { BookHeader } from "./components/book-header";
 import { ReadingStatusSection } from "./components/reading-status-section";
 import { BookTabs } from "./components/book-tabs";
 import { WriteReviewDialog } from "./components/write-review-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const TAB_OPTIONS = ["overview", "characters", "notes", "vocabulary", "reviews"] as const;
 
 interface Author {
 	id: number;
@@ -40,7 +43,10 @@ interface BookDetailContentProps {
 }
 
 export function BookDetailContent({ book }: BookDetailContentProps) {
-	const [activeTab, setActiveTab] = useState("overview");
+	const [activeTab, setActiveTab] = useQueryState(
+		"tab",
+		parseAsStringLiteral(TAB_OPTIONS).withDefault("overview")
+	);
 	const [showReviewDialog, setShowReviewDialog] = useState(false);
 
 	// Fetch user's book status

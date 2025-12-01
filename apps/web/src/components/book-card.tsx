@@ -68,11 +68,11 @@ export function BookCard({
 						{authors.map((a) => a.name).join(", ")}
 					</p>
 				)}
-				{avgRating !== undefined && avgRating > 0 && (
+				{avgRating !== undefined && Number(avgRating) > 0 && (
 					<div className="flex items-center gap-1">
 						<span className={cn("text-yellow-500", isSmall && "text-sm")}>★</span>
 						<span className={cn("text-muted-foreground", isSmall ? "text-xs" : "text-sm")}>
-							{avgRating.toFixed(1)}
+							{Number(avgRating).toFixed(1)}
 						</span>
 					</div>
 				)}
