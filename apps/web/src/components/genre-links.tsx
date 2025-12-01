@@ -52,7 +52,7 @@ export function GenreLinks({ className }: GenreLinksProps) {
 				return (
 					<Link
 						key={genre.id}
-						href={`/books?genre=${genre.id}`}
+						href={`/books?genre=${genre.id}` as "/books"}
 						className={cn(
 							"inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition-all",
 							"hover:scale-105 hover:shadow-md",

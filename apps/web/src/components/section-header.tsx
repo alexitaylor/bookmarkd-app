@@ -20,7 +20,7 @@ export function SectionHeader({
 			<h2 className="text-xl font-semibold">{title}</h2>
 			{href && (
 				<Link
-					href={href}
+					href={href as "/"}
 					className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
 				>
 					{linkText}

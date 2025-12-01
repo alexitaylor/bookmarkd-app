@@ -25,7 +25,7 @@ export function StatCard({ value, label, href, className }: StatCardProps) {
 	);
 
 	if (href) {
-		return <Link href={href}>{content}</Link>;
+		return <Link href={href as "/"}>{content}</Link>;
 	}
 
 	return content;

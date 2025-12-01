@@ -11,8 +11,6 @@ export default async function HomePage() {
 		},
 	});
 
-	console.log("session", session);
-
 	if (!session?.user) {
 		redirect("/login");
 	}

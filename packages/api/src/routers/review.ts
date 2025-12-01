@@ -20,6 +20,24 @@ const updateReviewSchema = z.object({
 });
 
 export const reviewRouter = {
+	// Get review stats for a book (count and average rating)
+	getStats: publicProcedure
+		.input(z.object({ bookId: z.number() }))
+		.handler(async ({ input }) => {
+			const [stats] = await db
+				.select({
+					count: sql<number>`count(*)`.as("count"),
+					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as("avg_rating"),
+				})
+				.from(review)
+				.where(eq(review.bookId, input.bookId));
+
+			return {
+				count: Number(stats?.count || 0),
+				avgRating: Number(stats?.avgRating || 0),
+			};
+		}),
+
 	// List reviews for a book (public)
 	list: publicProcedure
 		.input(
