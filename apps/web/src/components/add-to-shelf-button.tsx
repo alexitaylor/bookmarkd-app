@@ -66,7 +66,7 @@ export function AddToShelfButton({
 					)}
 				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end">
+			<DropdownMenuContent align="start">
 				{statusOptions.map((option) => (
 					<DropdownMenuItem
 						key={option.value}

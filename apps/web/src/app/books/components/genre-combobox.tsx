@@ -28,11 +28,22 @@ interface GenreComboboxProps {
 export function GenreCombobox({ value, onChange }: GenreComboboxProps) {
 	const [open, setOpen] = React.useState(false);
 
-	const { data: genres = [], isLoading } = useQuery({
-		queryKey: ["genres", "all"],
-		queryFn: () => client.genre.getAll(),
+	const { data: allGenres = [], isLoading } = useQuery({
+		queryKey: ["genres", "popular"],
+		queryFn: () => client.genre.getPopular({ limit: 50 }),
 		staleTime: 1000 * 60 * 5, // 5 minutes
 	});
+
+	// Filter out genres with 0 books and sort A-Z
+	const genres = allGenres
+		.filter((g) => {
+			const count =
+				typeof g.bookCount === "string"
+					? Number.parseInt(g.bookCount, 10)
+					: g.bookCount;
+			return count > 0;
+		})
+		.sort((a, b) => a.name.localeCompare(b.name));
 
 	const selectedGenre = genres.find((g) => g.id === value);
 

@@ -7,6 +7,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import {
+	ExternalLink,
 	Globe,
 	Grid3X3,
 	List,
@@ -15,7 +16,6 @@ import {
 	RotateCcw,
 	Search,
 	X,
-	ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -45,8 +45,8 @@ import { GenreCombobox } from "./components/genre-combobox";
 import { BookCardSkeleton, BookListSkeleton } from "./components/skeletons";
 import {
 	type BookStatus,
-	type SortOption,
 	ITEMS_PER_PAGE,
+	type SortOption,
 	sortLabels,
 	sortOptions,
 	viewOptions,
@@ -124,7 +124,7 @@ export default function BooksPage() {
 				genreId: genreId ?? undefined,
 				query: debouncedSearch || undefined,
 			};
-			let result;
+			let result: Awaited<ReturnType<typeof client.book.getRecent>>;
 			switch (sort) {
 				case "recent":
 					result = await client.book.getRecent(params);
@@ -213,7 +213,7 @@ export default function BooksPage() {
 		isbn13: string | null;
 	}): number | null => {
 		const isbn = book.isbn13 || book.isbn;
-		return isbn ? addedBooks.get(isbn) ?? null : null;
+		return isbn ? (addedBooks.get(isbn) ?? null) : null;
 	};
 
 	const handleClearSearch = () => {
@@ -313,20 +313,20 @@ export default function BooksPage() {
 
 			{/* Search Input */}
 			<div className="relative mb-6">
-				<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+				<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 				<Input
 					type="search"
 					placeholder="Search books by title..."
 					value={inputValue}
 					onChange={(e) => setInputValue(e.target.value)}
-					className="pl-10 pr-10"
+					className="pr-10 pl-10"
 				/>
 				{inputValue && (
 					<Button
 						type="button"
 						variant="ghost"
 						size="icon"
-						className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+						className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8"
 						onClick={handleClearSearch}
 					>
 						<X className="h-4 w-4" />
@@ -340,12 +340,14 @@ export default function BooksPage() {
 				(viewMode === "gallery" ? (
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 						{Array.from({ length: 10 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: only have index for key
 							<BookCardSkeleton key={i} />
 						))}
 					</div>
 				) : (
 					<div className="flex flex-col gap-3">
 						{Array.from({ length: 8 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: only have index for key
 							<BookListSkeleton key={i} />
 						))}
 					</div>
@@ -450,7 +452,7 @@ export default function BooksPage() {
 				<>
 					<hr className="my-8" />
 					<div className="text-center">
-						<p className="text-muted-foreground mb-4">
+						<p className="mb-4 text-muted-foreground">
 							Can&apos;t find what you&apos;re looking for?
 						</p>
 						{!showExternalResults ? (
@@ -461,13 +463,13 @@ export default function BooksPage() {
 						) : isLoadingExternal ? (
 							<div className="py-4">
 								<Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-								<p className="mt-2 text-sm text-muted-foreground">
+								<p className="mt-2 text-muted-foreground text-sm">
 									Searching online catalog...
 								</p>
 							</div>
 						) : externalBooks.length > 0 ? (
 							<div className="mt-4 text-left">
-								<p className="mb-4 text-sm text-muted-foreground">
+								<p className="mb-4 text-muted-foreground text-sm">
 									Found {externalBooks.length} book
 									{externalBooks.length !== 1 ? "s" : ""} in online catalog
 								</p>
@@ -496,7 +498,7 @@ export default function BooksPage() {
 															sizes="44px"
 														/>
 													) : (
-														<div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+														<div className="flex h-full items-center justify-center text-muted-foreground text-xs">
 															No cover
 														</div>
 													)}
@@ -508,11 +510,11 @@ export default function BooksPage() {
 														{book.title}
 													</p>
 													{book.authors.length > 0 && (
-														<p className="truncate text-xs text-muted-foreground">
+														<p className="truncate text-muted-foreground text-xs">
 															{book.authors.join(", ")}
 														</p>
 													)}
-													<p className="truncate text-xs text-muted-foreground">
+													<p className="truncate text-muted-foreground text-xs">
 														{[
 															book.publisher,
 															book.datePublished,
@@ -527,7 +529,7 @@ export default function BooksPage() {
 												{isAdded ? (
 													<Link
 														href={`/books/${addedBookId}` as "/"}
-														className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
+														className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md font-medium text-sm ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
 													>
 														<ExternalLink className="h-4 w-4" />
 														<span className="sr-only">View book</span>
@@ -556,7 +558,7 @@ export default function BooksPage() {
 								</div>
 							</div>
 						) : (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								No books found in online catalog. Try different keywords.
 							</p>
 						)}

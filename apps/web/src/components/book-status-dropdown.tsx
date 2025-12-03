@@ -1,15 +1,15 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import {
 	BookmarkPlus,
 	BookOpen,
 	CheckCircle2,
-	XCircle,
 	ChevronDown,
 	Trash2,
+	XCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -18,8 +18,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { client } from "@/utils/orpc";
 import { cn } from "@/lib/utils";
+import { client } from "@/utils/orpc";
 
 type BookStatus = "WantToRead" | "CurrentlyReading" | "Read" | "DNF" | "None";
 
@@ -136,7 +136,7 @@ export function BookStatusDropdown({
 						size="sm"
 						className={cn(
 							"h-8 gap-1 px-2",
-							currentStatus !== "None" && statusConfig[currentStatus].color
+							currentStatus !== "None" && statusConfig[currentStatus].color,
 						)}
 						disabled={isPending}
 						onClick={(e) => e.preventDefault()}
@@ -148,7 +148,7 @@ export function BookStatusDropdown({
 						<ChevronDown className="h-3 w-3 opacity-50" />
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-[180px]">
+				<DropdownMenuContent align="start">
 					{(
 						Object.entries(statusConfig) as [
 							BookStatus,
@@ -168,7 +168,7 @@ export function BookStatusDropdown({
 									}}
 									className={cn(
 										"cursor-pointer",
-										currentStatus === status && "bg-accent"
+										currentStatus === status && "bg-accent",
 									)}
 								>
 									<Icon className={cn("mr-2 h-4 w-4", config.color)} />
@@ -202,7 +202,7 @@ export function BookStatusDropdown({
 					size="lg"
 					className={cn(
 						"min-w-[200px] justify-between",
-						currentStatus !== "None" && statusConfig[currentStatus].color
+						currentStatus !== "None" && statusConfig[currentStatus].color,
 					)}
 					disabled={isPending}
 				>
@@ -229,7 +229,7 @@ export function BookStatusDropdown({
 								onClick={() => handleStatusChange(status)}
 								className={cn(
 									"cursor-pointer",
-									currentStatus === status && "bg-accent"
+									currentStatus === status && "bg-accent",
 								)}
 							>
 								<Icon className={cn("mr-2 h-4 w-4", config.color)} />

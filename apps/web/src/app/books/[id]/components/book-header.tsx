@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { BookOpen, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -107,9 +108,11 @@ export function BookHeader({ book, avgRating, reviewCount }: BookHeaderProps) {
 				{book.genres.length > 0 && (
 					<div className="flex flex-wrap gap-2 justify-center md:justify-start">
 						{book.genres.map((genre) => (
-							<Badge key={genre.id} variant="secondary" className="cursor-pointer hover:bg-secondary/80">
-								{genre.name}
-							</Badge>
+							<Link key={genre.id} href={`/books?genre=${genre.id}`}>
+								<Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
+									{genre.name}
+								</Badge>
+							</Link>
 						))}
 					</div>
 				)}
