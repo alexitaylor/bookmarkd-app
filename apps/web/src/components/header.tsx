@@ -8,6 +8,7 @@ export default function Header() {
 		{ to: "/", label: "Home" },
 		{ to: "/books", label: "Books" },
 		{ to: "/genres", label: "Genres" },
+		{ to: "/shelves", label: "My Shelves" },
 		{ to: "/dashboard", label: "Dashboard" },
 		{ to: "/todos", label: "Todos" },
 		{ to: "/ai", label: "AI Chat" },

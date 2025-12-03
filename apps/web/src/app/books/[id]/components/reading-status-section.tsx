@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import {
 	BookmarkPlus,
 	BookOpen,
 	CheckCircle2,
-	XCircle,
 	ChevronDown,
 	Trash2,
+	XCircle,
 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -19,10 +19,10 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Progress } from "@/components/ui/progress";
+import { ReadingProgressBar } from "@/components/ui/reading-progress-bar";
 import { UpdateProgressModal } from "@/components/update-progress-modal";
-import { client } from "@/utils/orpc";
 import { cn } from "@/lib/utils";
+import { client } from "@/utils/orpc";
 
 type BookStatus = "WantToRead" | "CurrentlyReading" | "Read" | "DNF" | "None";
 
@@ -85,23 +85,15 @@ export function ReadingStatusSection({
 
 	const currentStatus = userBook?.status || "None";
 	const currentPage = userBook?.currentPage || 0;
-	const progress =
-		pageCount && pageCount > 0
-			? Math.round((currentPage / pageCount) * 100)
-			: 0;
-
-	// Get progress bar color based on percentage
-	const getProgressColor = (percent: number) => {
-		if (percent >= 100) return "bg-green-500";
-		if (percent >= 75) return "bg-emerald-500";
-		if (percent >= 50) return "bg-yellow-500";
-		if (percent >= 25) return "bg-orange-500";
-		return "bg-red-500";
-	};
 
 	const statusMutation = useMutation({
-		mutationFn: ({ status, currentPage }: { status: BookStatus; currentPage?: number }) =>
-			client.userBook.updateStatus({ bookId, status, currentPage }),
+		mutationFn: ({
+			status,
+			currentPage,
+		}: {
+			status: BookStatus;
+			currentPage?: number;
+		}) => client.userBook.updateStatus({ bookId, status, currentPage }),
 		onSuccess: (_, { status }) => {
 			const config = statusConfig[status];
 			toast.success(`Book marked as "${config.label}"`);
@@ -156,7 +148,7 @@ export function ReadingStatusSection({
 							size="lg"
 							className={cn(
 								"min-w-[200px] justify-between",
-								currentStatus !== "None" && statusConfig[currentStatus].color
+								currentStatus !== "None" && statusConfig[currentStatus].color,
 							)}
 							disabled={statusMutation.isPending || removeMutation.isPending}
 						>
@@ -171,7 +163,7 @@ export function ReadingStatusSection({
 						{(
 							Object.entries(statusConfig) as [
 								BookStatus,
-								(typeof statusConfig)[BookStatus]
+								(typeof statusConfig)[BookStatus],
 							][]
 						)
 							.filter(([status]) => status !== "None")
@@ -183,7 +175,7 @@ export function ReadingStatusSection({
 										onClick={() => handleStatusChange(status)}
 										className={cn(
 											"cursor-pointer",
-											currentStatus === status && "bg-accent"
+											currentStatus === status && "bg-accent",
 										)}
 									>
 										<Icon className={cn("mr-2 h-4 w-4", config.color)} />
@@ -210,10 +202,7 @@ export function ReadingStatusSection({
 				{(currentStatus === "CurrentlyReading" ||
 					currentStatus === "Read" ||
 					currentStatus === "DNF") && (
-					<Button
-						variant="outline"
-						onClick={() => setShowProgressModal(true)}
-					>
+					<Button variant="outline" onClick={() => setShowProgressModal(true)}>
 						Update Progress
 					</Button>
 				)}
@@ -224,22 +213,20 @@ export function ReadingStatusSection({
 				<div className="max-w-md space-y-2">
 					<div className="flex items-center justify-between text-sm">
 						<span className="text-muted-foreground">Reading progress</span>
-						<span className="font-medium">{progress}%</span>
 					</div>
-					<Progress
-						value={progress}
-						className="h-2"
-						indicatorClassName={getProgressColor(progress)}
+					<ReadingProgressBar
+						currentPage={currentPage}
+						pageCount={pageCount}
+						height="h-2"
+						showPageCount
+						showPercentage
 					/>
-					<p className="text-sm text-muted-foreground">
-						{currentPage} of {pageCount} pages
-					</p>
 				</div>
 			)}
 
 			{/* Dates */}
 			{userBook?.startedAt && (
-				<div className="text-sm text-muted-foreground">
+				<div className="text-muted-foreground text-sm">
 					Started:{" "}
 					{new Date(userBook.startedAt).toLocaleDateString("en-US", {
 						month: "long",

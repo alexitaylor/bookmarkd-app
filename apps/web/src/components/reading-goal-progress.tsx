@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Target, Plus } from "lucide-react";
+import { Plus, Target } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
 	Dialog,
 	DialogContent,
@@ -17,8 +16,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { orpc, client } from "@/utils/orpc";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { client, orpc } from "@/utils/orpc";
 
 interface ReadingGoalProgressProps {
 	className?: string;
@@ -30,7 +30,7 @@ export function ReadingGoalProgress({ className }: ReadingGoalProgressProps) {
 	const queryClient = useQueryClient();
 
 	const { data: goalData, isLoading } = useQuery(
-		orpc.userBook.getReadingGoal.queryOptions()
+		orpc.userBook.getReadingGoal.queryOptions(),
 	);
 
 	const setGoalMutation = useMutation({
@@ -49,7 +49,7 @@ export function ReadingGoalProgress({ className }: ReadingGoalProgressProps) {
 
 	const handleSetGoal = (e: React.FormEvent) => {
 		e.preventDefault();
-		const goal = parseInt(goalInput, 10);
+		const goal = Number.parseInt(goalInput, 10);
 		if (isNaN(goal) || goal < 1 || goal > 365) {
 			toast.error("Please enter a valid goal between 1 and 365");
 			return;
@@ -59,21 +59,25 @@ export function ReadingGoalProgress({ className }: ReadingGoalProgressProps) {
 
 	if (isLoading) {
 		return (
-			<div className={cn("rounded-lg border p-4 animate-pulse", className)}>
-				<div className="h-6 bg-muted rounded w-1/3 mb-4" />
-				<div className="h-4 bg-muted rounded w-full mb-2" />
-				<div className="h-3 bg-muted rounded w-1/2" />
+			<div className={cn("animate-pulse rounded-lg border p-4", className)}>
+				<div className="mb-4 h-6 w-1/3 rounded bg-muted" />
+				<div className="mb-2 h-4 w-full rounded bg-muted" />
+				<div className="h-3 w-1/2 rounded bg-muted" />
 			</div>
 		);
 	}
 
 	const hasGoal = goalData?.goal !== null && goalData?.goal !== undefined;
-	const progress = hasGoal ? Math.min((goalData.booksRead / goalData.goal!) * 100, 100) : 0;
-	const booksRemaining = hasGoal ? Math.max(goalData.goal! - goalData.booksRead, 0) : 0;
+	const progress = hasGoal
+		? Math.min((goalData.booksRead / goalData.goal!) * 100, 100)
+		: 0;
+	const booksRemaining = hasGoal
+		? Math.max(goalData.goal! - goalData.booksRead, 0)
+		: 0;
 
 	return (
 		<div className={cn("rounded-lg border p-4", className)}>
-			<div className="flex items-center justify-between mb-3">
+			<div className="mb-3 flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<Target className="h-5 w-5 text-primary" />
 					<h3 className="font-semibold">{goalData?.year} Reading Goal</h3>
@@ -81,14 +85,21 @@ export function ReadingGoalProgress({ className }: ReadingGoalProgressProps) {
 				<Dialog open={isOpen} onOpenChange={setIsOpen}>
 					<DialogTrigger asChild>
 						<Button variant="ghost" size="sm">
-							{hasGoal ? "Edit" : <><Plus className="h-4 w-4 mr-1" /> Set Goal</>}
+							{hasGoal ? (
+								"Edit"
+							) : (
+								<>
+									<Plus className="mr-1 h-4 w-4" /> Set Goal
+								</>
+							)}
 						</Button>
 					</DialogTrigger>
 					<DialogContent className="sm:max-w-md">
 						<DialogHeader>
 							<DialogTitle>Set Your Reading Goal</DialogTitle>
 							<DialogDescription>
-								How many books do you want to read in {new Date().getFullYear()}?
+								How many books do you want to read in {new Date().getFullYear()}
+								?
 							</DialogDescription>
 						</DialogHeader>
 						<form onSubmit={handleSetGoal}>
@@ -125,12 +136,18 @@ export function ReadingGoalProgress({ className }: ReadingGoalProgressProps) {
 
 			{hasGoal ? (
 				<>
-					<div className="flex items-baseline gap-2 mb-2">
-						<span className="text-3xl font-bold">{goalData.booksRead}</span>
-						<span className="text-muted-foreground">of {goalData.goal} books</span>
+					<div className="mb-2 flex items-baseline gap-2">
+						<span className="font-bold text-3xl">{goalData.booksRead}</span>
+						<span className="text-muted-foreground">
+							of {goalData.goal} books
+						</span>
 					</div>
-					<Progress value={progress} className="mb-2" />
-					<p className="text-sm text-muted-foreground">
+					<Progress
+					value={progress}
+					className="mb-2"
+					indicatorClassName="bg-blue-600 dark:bg-blue-500"
+				/>
+					<p className="text-muted-foreground text-sm">
 						{booksRemaining === 0
 							? "🎉 Congratulations! You've reached your goal!"
 							: `${booksRemaining} more book${booksRemaining !== 1 ? "s" : ""} to go`}

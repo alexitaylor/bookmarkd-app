@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { orpc } from "@/utils/orpc";
+import { useState } from "react";
+import { BookCard, BookCardCompact } from "@/components/book-card";
+import { GenreLinks } from "@/components/genre-links";
+import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { ReadingGoalProgress } from "@/components/reading-goal-progress";
+import { ReadingStats } from "@/components/reading-stats";
 import { SearchBar } from "@/components/search-bar";
 import { SectionHeader } from "@/components/section-header";
-import { BookCard, BookCardCompact } from "@/components/book-card";
-import { HorizontalScroll } from "@/components/horizontal-scroll";
-import { StatCard } from "@/components/stat-card";
-import { UpdateProgressModal } from "@/components/update-progress-modal";
-import { ReadingGoalProgress } from "@/components/reading-goal-progress";
-import { GenreLinks } from "@/components/genre-links";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UpdateProgressModal } from "@/components/update-progress-modal";
+import { orpc } from "@/utils/orpc";
 
 interface User {
 	id: string;
@@ -34,22 +34,17 @@ export function HomeContent({ user }: HomeContentProps) {
 
 	// Fetch currently reading books
 	const { data: currentlyReading, isLoading: isLoadingCurrent } = useQuery(
-		orpc.userBook.getCurrentlyReading.queryOptions({ limit: 6 })
+		orpc.userBook.getCurrentlyReading.queryOptions({ limit: 6 }),
 	);
 
 	// Fetch popular books
 	const { data: popularBooks, isLoading: isLoadingPopular } = useQuery(
-		orpc.book.getPopular.queryOptions({ limit: 12 })
+		orpc.book.getPopular.queryOptions({ limit: 12 }),
 	);
 
 	// Fetch recently added books
 	const { data: recentBooks, isLoading: isLoadingRecent } = useQuery(
-		orpc.book.getRecent.queryOptions({ limit: 12 })
-	);
-
-	// Fetch reading stats
-	const { data: stats, isLoading: isLoadingStats } = useQuery(
-		orpc.userBook.getStats.queryOptions()
+		orpc.book.getRecent.queryOptions({ limit: 12 }),
 	);
 
 	const handleUpdateProgress = (bookId: number) => {
@@ -65,10 +60,10 @@ export function HomeContent({ user }: HomeContentProps) {
 	};
 
 	return (
-		<div className="container mx-auto max-w-6xl px-4 py-8 space-y-8">
+		<div className="container mx-auto max-w-6xl space-y-8 px-4 py-8">
 			{/* Welcome Header */}
 			<div className="space-y-2">
-				<h1 className="text-3xl font-bold">
+				<h1 className="font-bold text-3xl">
 					Welcome back, {user.name?.split(" ")[0] || "Reader"}!
 				</h1>
 				<p className="text-muted-foreground">
@@ -94,6 +89,7 @@ export function HomeContent({ user }: HomeContentProps) {
 				{isLoadingCurrent ? (
 					<HorizontalScroll>
 						{Array.from({ length: 4 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items
 							<div key={i} className="w-32 shrink-0 space-y-2">
 								<Skeleton className="aspect-[2/3] w-full rounded-lg" />
 								<Skeleton className="h-4 w-full" />
@@ -122,7 +118,7 @@ export function HomeContent({ user }: HomeContentProps) {
 						<p className="text-muted-foreground">
 							You&apos;re not currently reading any books.
 						</p>
-						<p className="text-sm text-muted-foreground mt-1">
+						<p className="mt-1 text-muted-foreground text-sm">
 							Browse popular books below to get started!
 						</p>
 					</div>
@@ -135,33 +131,7 @@ export function HomeContent({ user }: HomeContentProps) {
 				<ReadingGoalProgress />
 
 				{/* Reading Stats */}
-				<div className="space-y-4">
-					<h3 className="font-semibold">Your Stats</h3>
-					{isLoadingStats ? (
-						<div className="grid gap-3 sm:grid-cols-3">
-							{Array.from({ length: 3 }).map((_, i) => (
-								<Skeleton key={i} className="h-20 w-full rounded-lg" />
-							))}
-						</div>
-					) : stats ? (
-						<div className="grid gap-3 sm:grid-cols-3">
-							<StatCard
-								value={stats.booksReadThisYear}
-								label="Books Read"
-								href="/shelves?status=Read"
-							/>
-							<StatCard
-								value={stats.pagesReadThisYear.toLocaleString()}
-								label="Pages Read"
-							/>
-							<StatCard
-								value={stats.currentlyReading}
-								label="Reading Now"
-								href="/shelves?status=CurrentlyReading"
-							/>
-						</div>
-					) : null}
-				</div>
+				<ReadingStats hideToggle />
 			</div>
 
 			{/* Popular Books Section */}
@@ -170,6 +140,7 @@ export function HomeContent({ user }: HomeContentProps) {
 				{isLoadingPopular ? (
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 						{Array.from({ length: 6 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items
 							<div key={i} className="space-y-2">
 								<Skeleton className="aspect-[2/3] w-full rounded-lg" />
 								<Skeleton className="h-4 w-full" />
@@ -205,6 +176,7 @@ export function HomeContent({ user }: HomeContentProps) {
 				{isLoadingRecent ? (
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 						{Array.from({ length: 6 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items
 							<div key={i} className="space-y-2">
 								<Skeleton className="aspect-[2/3] w-full rounded-lg" />
 								<Skeleton className="h-4 w-full" />
