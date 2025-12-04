@@ -1,14 +1,14 @@
-import { protectedProcedure, publicProcedure } from "../index";
 import type { RouterClient } from "@orpc/server";
-import { todoRouter } from "./todo";
-import { bookRouter } from "./book";
+import { protectedProcedure, publicProcedure } from "../index";
 import { authorRouter } from "./author";
-import { genreRouter } from "./genre";
+import { bookRouter } from "./book";
 import { characterRouter } from "./character";
+import { genreRouter } from "./genre";
 import { noteRouter } from "./note";
-import { vocabularyRouter } from "./vocabulary";
-import { userBookRouter } from "./userBook";
 import { reviewRouter } from "./review";
+import { todoRouter } from "./todo";
+import { userBookRouter } from "./user-book";
+import { vocabularyRouter } from "./vocabulary";
 
 export const appRouter = {
 	healthCheck: publicProcedure.handler(() => {
