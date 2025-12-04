@@ -60,6 +60,8 @@ export const userBookRouter = {
 				throw new Error("User not authenticated");
 			}
 
+			const { inArray } = await import("drizzle-orm");
+
 			// Get user books with book info for the specified status
 			const userBooks = await db
 				.select({
@@ -84,7 +86,6 @@ export const userBookRouter = {
 
 			// Get authors for all books in one query
 			const bookIds = userBooks.map((ub) => ub.bookId);
-			const { inArray } = await import("drizzle-orm");
 
 			const bookAuthors =
 				bookIds.length > 0
@@ -453,8 +454,6 @@ export const userBookRouter = {
 			throw new Error("User not authenticated");
 		}
 
-		const { inArray } = await import("drizzle-orm");
-
 		// Get start of current year and month
 		const now = new Date();
 		const currentYear = now.getFullYear();
@@ -549,14 +548,13 @@ export const userBookRouter = {
 
 		// Calculate streak from today backwards
 		let readingStreak = 0;
-		const today = new Date().toISOString().split("T")[0];
 		const activityDates = new Set(recentActivity.map((a) => a.activityDate));
 
 		for (let i = 0; i < 30; i++) {
 			const checkDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
 				.toISOString()
 				.split("T")[0];
-			if (activityDates.has(checkDate)) {
+			if (checkDate && activityDates.has(checkDate)) {
 				readingStreak++;
 			} else if (i > 0) {
 				// Allow skipping today if no activity yet
@@ -826,5 +824,85 @@ export const userBookRouter = {
 				.where(eq(user.id, userId));
 
 			return { success: true, goal: input.goal, year: currentYear };
+		}),
+
+	// Get reading calendar data for a specific year/month
+	getReadingCalendar: protectedProcedure
+		.input(
+			z.object({
+				year: z.number().int(),
+				month: z.number().int().min(1).max(12),
+			}),
+		)
+		.handler(async ({ input, context }) => {
+			const { lte } = await import("drizzle-orm");
+			const userId = context.session?.user?.id;
+			if (!userId) {
+				throw new Error("User not authenticated");
+			}
+
+			// Get start and end of month
+			const startOfMonth = new Date(input.year, input.month - 1, 1);
+			const endOfMonth = new Date(input.year, input.month, 0, 23, 59, 59, 999);
+
+			// Get all books finished in this month
+			const finishedBooks = await db
+				.select({
+					id: userBook.id,
+					bookId: userBook.bookId,
+					finishedAt: userBook.finishedAt,
+					rating: userBook.rating,
+					bookTitle: book.title,
+					bookCoverUrl: book.coverUrl,
+					bookPageCount: book.pageCount,
+				})
+				.from(userBook)
+				.innerJoin(book, eq(book.id, userBook.bookId))
+				.where(
+					and(
+						eq(userBook.userId, userId),
+						eq(userBook.status, "Read"),
+						gte(userBook.finishedAt, startOfMonth),
+						lte(userBook.finishedAt, endOfMonth),
+					),
+				)
+				.orderBy(userBook.finishedAt);
+
+			// Group books by day
+			const booksByDay: Record<
+				string,
+				Array<{
+					id: number;
+					bookId: number;
+					title: string;
+					coverUrl: string | null;
+					pageCount: number | null;
+					rating: number | null;
+				}>
+			> = {};
+
+			for (const fb of finishedBooks) {
+				if (!fb.finishedAt) continue;
+				const day = fb.finishedAt.toISOString().split("T")[0];
+				if (!day) continue;
+				if (!booksByDay[day]) {
+					booksByDay[day] = [];
+				}
+				booksByDay[day].push({
+					id: fb.id,
+					bookId: fb.bookId,
+					title: fb.bookTitle,
+					coverUrl: fb.bookCoverUrl,
+					pageCount: fb.bookPageCount,
+					rating: fb.rating,
+				});
+			}
+
+			return {
+				year: input.year,
+				month: input.month,
+				booksByDay,
+				totalBooks: finishedBooks.length,
+			};
 		}),
 };

@@ -2,9 +2,40 @@ import { db } from "@bookmarkd/db";
 import { user } from "@bookmarkd/db/schema/auth";
 import { book } from "@bookmarkd/db/schema/book";
 import { review, reviewVote } from "@bookmarkd/db/schema/review";
+import { userBook } from "@bookmarkd/db/schema/user-book";
 import { and, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure, publicProcedure } from "../index";
+
+// Helper to sync rating to userBook table
+async function syncRatingToUserBook(
+	userId: string,
+	bookId: number,
+	rating: number,
+) {
+	// Check if userBook entry exists
+	const [existing] = await db
+		.select()
+		.from(userBook)
+		.where(and(eq(userBook.userId, userId), eq(userBook.bookId, bookId)))
+		.limit(1);
+
+	if (existing) {
+		// Update existing entry
+		await db
+			.update(userBook)
+			.set({ rating })
+			.where(eq(userBook.id, existing.id));
+	} else {
+		// Create new entry with rating
+		await db.insert(userBook).values({
+			userId,
+			bookId,
+			rating,
+			status: "None",
+		});
+	}
+}
 
 // Input schemas
 const createReviewSchema = z.object({
@@ -209,6 +240,9 @@ export const reviewRouter = {
 				})
 				.returning();
 
+			// Sync rating to userBook table
+			await syncRatingToUserBook(userId, input.bookId, input.rating);
+
 			return newReview;
 		}),
 
@@ -239,6 +273,11 @@ export const reviewRouter = {
 				.set(updateData)
 				.where(eq(review.id, id))
 				.returning();
+
+			// Sync rating to userBook table if rating was updated
+			if (input.rating) {
+				await syncRatingToUserBook(userId, existingReview.bookId, input.rating);
+			}
 
 			return updatedReview;
 		}),

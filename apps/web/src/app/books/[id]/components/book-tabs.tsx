@@ -1,11 +1,11 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OverviewTab } from "./tabs/overview-tab";
 import { CharactersTab } from "./tabs/characters-tab";
 import { NotesTab } from "./tabs/notes-tab";
-import { VocabularyTab } from "./tabs/vocabulary-tab";
+import { OverviewTab } from "./tabs/overview-tab";
 import { ReviewsTab } from "./tabs/reviews-tab";
+import { VocabularyTab } from "./tabs/vocabulary-tab";
 
 interface Author {
 	id: number;
@@ -33,16 +33,27 @@ interface Book {
 	genres: Genre[];
 }
 
+type TabValue = "overview" | "characters" | "notes" | "vocabulary" | "reviews";
+
 interface BookTabsProps {
 	bookId: number;
 	book: Book;
-	activeTab: string;
-	onTabChange: (tab: string) => void;
+	activeTab: TabValue;
+	onTabChange: (tab: TabValue) => void;
 }
 
-export function BookTabs({ bookId, book, activeTab, onTabChange }: BookTabsProps) {
+export function BookTabs({
+	bookId,
+	book,
+	activeTab,
+	onTabChange,
+}: BookTabsProps) {
 	return (
-		<Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+		<Tabs
+			value={activeTab}
+			onValueChange={(value) => onTabChange(value as TabValue)}
+			className="w-full"
+		>
 			<TabsList className="w-full justify-start overflow-x-auto">
 				<TabsTrigger value="overview">Overview</TabsTrigger>
 				<TabsTrigger value="characters">Characters</TabsTrigger>
@@ -52,7 +63,11 @@ export function BookTabs({ bookId, book, activeTab, onTabChange }: BookTabsProps
 			</TabsList>
 
 			<TabsContent value="overview" className="mt-6">
-				<OverviewTab bookId={bookId} book={book} onNavigateToTab={onTabChange} />
+				<OverviewTab
+					bookId={bookId}
+					book={book}
+					onNavigateToTab={onTabChange}
+				/>
 			</TabsContent>
 
 			<TabsContent value="characters" className="mt-6">

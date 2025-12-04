@@ -28,7 +28,7 @@ interface ShelfBook {
 	bookDatePublished: string | null;
 }
 
-interface ShelfBookCardProps {
+interface ShelfBookListItemProps {
 	book: ShelfBook;
 	showProgress?: boolean;
 	isSelectMode?: boolean;
@@ -36,13 +36,13 @@ interface ShelfBookCardProps {
 	onToggleSelect?: () => void;
 }
 
-export function ShelfBookCard({
+export function ShelfBookListItem({
 	book,
 	showProgress = false,
 	isSelectMode = false,
 	isSelected = false,
 	onToggleSelect,
-}: ShelfBookCardProps) {
+}: ShelfBookListItemProps) {
 	const [hoveredRating, setHoveredRating] = useState<number | null>(null);
 	const queryClient = useQueryClient();
 
@@ -54,8 +54,9 @@ export function ShelfBookCard({
 		},
 	});
 
-	const handleCardClick = (e: React.MouseEvent) => {
+	const handleRowClick = (e: React.MouseEvent) => {
 		if (isSelectMode && onToggleSelect) {
+			e.preventDefault();
 			onToggleSelect();
 		}
 	};
@@ -83,11 +84,11 @@ export function ShelfBookCard({
 			role="button"
 			tabIndex={isSelectMode ? 0 : undefined}
 			className={cn(
-				"group relative flex h-full flex-col overflow-hidden rounded-lg",
+				"group flex items-center gap-4 rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50",
 				isSelectMode && "cursor-pointer",
-				isSelected && "ring-2 ring-primary ring-offset-2",
+				isSelected && "ring-2 ring-primary",
 			)}
-			onClick={handleCardClick}
+			onClick={handleRowClick}
 			onKeyDown={handleKeyDown}
 		>
 			{/* Selection Checkbox */}
@@ -98,7 +99,7 @@ export function ShelfBookCard({
 						e.stopPropagation();
 						onToggleSelect?.();
 					}}
-					className="absolute top-2 left-2 z-10 rounded bg-background/80 p-1 backdrop-blur-sm transition-colors hover:bg-background"
+					className="flex-shrink-0"
 				>
 					{isSelected ? (
 						<CheckSquare className="h-5 w-5 text-primary" />
@@ -112,7 +113,7 @@ export function ShelfBookCard({
 			<Link
 				href={`/books/${book.bookId}`}
 				className={cn(
-					"relative aspect-[2/3] w-full flex-grow-2 overflow-hidden rounded-lg bg-muted shadow-sm transition-transform hover:scale-[1.02]",
+					"relative h-20 w-14 flex-shrink-0 overflow-hidden rounded bg-muted shadow-sm transition-transform hover:scale-[1.02]",
 					isSelectMode && "pointer-events-none",
 				)}
 			>
@@ -121,35 +122,32 @@ export function ShelfBookCard({
 						src={book.bookCoverUrl}
 						alt={book.bookTitle}
 						fill
-						className="object-cover transition-opacity group-hover:opacity-90"
-						sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+						className="object-cover"
+						sizes="56px"
 					/>
 				) : (
 					<div className="flex h-full items-center justify-center bg-secondary">
-						<BookOpen className="h-12 w-12 text-muted-foreground" />
+						<BookOpen className="h-6 w-6 text-muted-foreground" />
 					</div>
 				)}
 			</Link>
 
 			{/* Book Info */}
-			<div className="mt-3 flex flex-1 flex-col gap-2">
-				{/* Title and Author */}
-				<div className="min-h-[3.5rem] flex-shrink-0">
-					<Link href={`/books/${book.bookId}`}>
-						<h3 className="line-clamp-2 font-medium leading-tight transition-colors hover:text-primary">
-							{book.bookTitle}
-						</h3>
-					</Link>
-					{book.bookAuthors && (
-						<p className="mt-0.5 line-clamp-1 text-muted-foreground text-sm">
-							{book.bookAuthors}
-						</p>
-					)}
-				</div>
+			<div className="flex min-w-0 flex-1 flex-col gap-1">
+				<Link href={`/books/${book.bookId}`}>
+					<h3 className="line-clamp-1 font-medium transition-colors hover:text-primary">
+						{book.bookTitle}
+					</h3>
+				</Link>
+				{book.bookAuthors && (
+					<p className="line-clamp-1 text-muted-foreground text-sm">
+						{book.bookAuthors}
+					</p>
+				)}
 
-				{/* Quick Actions Row - Rating & Note */}
-				<div className="flex items-center gap-2">
-					{/* Quick Rating */}
+				{/* Rating & Progress Row */}
+				<div className="flex items-center gap-4">
+					{/* Interactive Rating */}
 					{/** biome-ignore lint/a11y/noStaticElementInteractions: <explanation> */}
 					<div
 						className="flex items-center gap-0.5"
@@ -177,7 +175,7 @@ export function ShelfBookCard({
 								>
 									<Star
 										className={cn(
-											"h-3.5 w-3.5 transition-colors",
+											"h-3 w-3 transition-colors",
 											isActive
 												? "fill-yellow-400 text-yellow-400"
 												: "text-muted-foreground/30 hover:text-yellow-400/50",
@@ -194,32 +192,36 @@ export function ShelfBookCard({
 						disabled={isSelectMode}
 						compact
 					/>
+
+					{/* Page Count */}
+					{book.bookPageCount && (
+						<span className="text-muted-foreground text-xs">
+							{book.bookPageCount} pages
+						</span>
+					)}
+
+					{/* Progress Bar (for Currently Reading) */}
+					{showProgress && (
+						<ReadingProgressBar
+							currentPage={book.currentPage}
+							pageCount={book.bookPageCount}
+							height="h-1"
+							showPageCount
+							showPercentage
+							className="max-w-[200px] flex-1"
+						/>
+					)}
 				</div>
+			</div>
 
-				{/* Progress Bar (for Currently Reading) */}
-				{showProgress && (
-					<ReadingProgressBar
-						currentPage={book.currentPage}
-						pageCount={book.bookPageCount}
-						height="h-1.5"
-						showPageCount
-						showPercentage
-						className="flex-shrink-0"
-					/>
-				)}
-
-				{/* Spacer to push dropdown to bottom */}
-				<div className="flex-1" />
-
-				{/* Status Dropdown */}
-				<div className="flex-shrink-0">
-					<BookStatusDropdown
-						bookId={book.bookId}
-						pageCount={book.bookPageCount}
-						currentStatus={book.status as BookStatus}
-						compact
-					/>
-				</div>
+			{/* Status Dropdown */}
+			<div className="flex-shrink-0">
+				<BookStatusDropdown
+					bookId={book.bookId}
+					pageCount={book.bookPageCount}
+					currentStatus={book.status as BookStatus}
+					compact
+				/>
 			</div>
 		</div>
 	);
