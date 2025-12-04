@@ -19,8 +19,6 @@ export * from "./reaction";
 // Relations (must be last to avoid circular dependencies)
 export * from "./relations";
 export * from "./review";
-// Demo table (can be removed later)
-export * from "./todo";
 // User extensions
 export * from "./user-book";
 export * from "./vocabulary";

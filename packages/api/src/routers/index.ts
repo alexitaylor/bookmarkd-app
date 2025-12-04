@@ -6,7 +6,6 @@ import { characterRouter } from "./character";
 import { genreRouter } from "./genre";
 import { noteRouter } from "./note";
 import { reviewRouter } from "./review";
-import { todoRouter } from "./todo";
 import { userBookRouter } from "./user-book";
 import { vocabularyRouter } from "./vocabulary";
 
@@ -20,7 +19,6 @@ export const appRouter = {
 			user: context.session?.user,
 		};
 	}),
-	todo: todoRouter,
 	book: bookRouter,
 	author: authorRouter,
 	genre: genreRouter,
