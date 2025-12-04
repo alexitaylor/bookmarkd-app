@@ -1,3 +1,4 @@
+import { Bot, LayoutDashboard, LogOut, Mail, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -31,28 +32,55 @@ export default function UserMenu() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline">{session.user.name}</Button>
+				<Button variant="outline" className="gap-2">
+					<User className="h-4 w-4" />
+					{session.user.name}
+				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent className="bg-card">
+			<DropdownMenuContent className="w-56 bg-card" align="end">
+				{/* Account Section */}
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
+				<DropdownMenuItem className="gap-2">
+					<Mail className="h-4 w-4 text-muted-foreground" />
+					<span className="truncate">{session.user.email}</span>
+				</DropdownMenuItem>
+
 				<DropdownMenuSeparator />
-				<DropdownMenuItem>{session.user.email}</DropdownMenuItem>
-				<DropdownMenuItem asChild>
-					<Button
-						variant="destructive"
-						className="w-full"
-						onClick={() => {
-							authClient.signOut({
-								fetchOptions: {
-									onSuccess: () => {
-										router.push("/");
-									},
+
+				{/* Navigation Section */}
+				<DropdownMenuLabel className="text-muted-foreground text-xs">
+					Navigation
+				</DropdownMenuLabel>
+				<DropdownMenuItem asChild className="cursor-pointer gap-2">
+					<Link href="/dashboard">
+						<LayoutDashboard className="h-4 w-4" />
+						Dashboard
+					</Link>
+				</DropdownMenuItem>
+				<DropdownMenuItem asChild className="cursor-pointer gap-2">
+					<Link href="/ai">
+						<Bot className="h-4 w-4" />
+						AI Chat
+					</Link>
+				</DropdownMenuItem>
+
+				<DropdownMenuSeparator />
+
+				{/* Sign Out */}
+				<DropdownMenuItem
+					className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+					onClick={() => {
+						authClient.signOut({
+							fetchOptions: {
+								onSuccess: () => {
+									router.push("/");
 								},
-							});
-						}}
-					>
-						Sign Out
-					</Button>
+							},
+						});
+					}}
+				>
+					<LogOut className="h-4 w-4" />
+					Sign Out
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
