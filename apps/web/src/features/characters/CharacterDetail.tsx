@@ -1,12 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
-import { client } from "@/utils/orpc";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -18,6 +14,10 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { client } from "@/utils/orpc";
 
 interface Character {
 	id: number;
@@ -81,27 +81,30 @@ export function CharacterDetail({
 		<div className="h-full overflow-y-auto">
 			{/* Mobile Back Button */}
 			{showBackButton && onBack && (
-				<div className="p-4 border-b md:hidden">
+				<div className="border-b p-4 md:hidden">
 					<Button variant="ghost" size="sm" onClick={onBack}>
-						<ArrowLeft className="h-4 w-4 mr-2" />
+						<ArrowLeft className="mr-2 h-4 w-4" />
 						Back to Characters
 					</Button>
 				</div>
 			)}
 
-			<div className="p-6 space-y-6">
+			<div className="space-y-6 p-6">
 				{/* Header */}
 				<div className="flex items-start gap-4">
 					<Avatar className="h-20 w-20 shrink-0">
-						<AvatarImage src={character.imageUrl || undefined} alt={character.name} />
+						<AvatarImage
+							src={character.imageUrl || undefined}
+							alt={character.name}
+						/>
 						<AvatarFallback className="text-2xl">
 							<User className="h-10 w-10 text-muted-foreground" />
 						</AvatarFallback>
 					</Avatar>
-					<div className="flex-1 min-w-0">
+					<div className="min-w-0 flex-1">
 						<div className="flex items-start justify-between gap-2">
 							<div>
-								<h2 className="text-2xl font-bold">{character.name}</h2>
+								<h2 className="font-bold text-2xl">{character.name}</h2>
 								{character.aiGenerated && (
 									<Badge variant="secondary" className="mt-1">
 										AI Generated
@@ -115,7 +118,7 @@ export function CharacterDetail({
 				{/* Role */}
 				{role && (
 					<div>
-						<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+						<h3 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
 							Role
 						</h3>
 						<Badge variant="outline" className="text-sm">
@@ -127,7 +130,7 @@ export function CharacterDetail({
 				{/* Traits */}
 				{traits && (
 					<div>
-						<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+						<h3 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
 							Personality Traits
 						</h3>
 						<div className="flex flex-wrap gap-2">
@@ -143,10 +146,10 @@ export function CharacterDetail({
 				{/* Description */}
 				{text && (
 					<div>
-						<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+						<h3 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
 							Description
 						</h3>
-						<p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+						<p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
 							{text}
 						</p>
 					</div>
@@ -160,15 +163,18 @@ export function CharacterDetail({
 				)}
 
 				{/* Actions */}
-				<div className="flex items-center gap-2 pt-4 border-t">
+				<div className="flex items-center gap-2 border-t pt-4">
 					<Button onClick={onEdit}>
-						<Pencil className="h-4 w-4 mr-2" />
+						<Pencil className="mr-2 h-4 w-4" />
 						Edit
 					</Button>
 					<AlertDialog>
 						<AlertDialogTrigger asChild>
-							<Button variant="outline" className="text-destructive hover:text-destructive">
-								<Trash2 className="h-4 w-4 mr-2" />
+							<Button
+								variant="outline"
+								className="text-destructive hover:text-destructive"
+							>
+								<Trash2 className="mr-2 h-4 w-4" />
 								Delete
 							</Button>
 						</AlertDialogTrigger>
@@ -176,7 +182,8 @@ export function CharacterDetail({
 							<AlertDialogHeader>
 								<AlertDialogTitle>Delete Character</AlertDialogTitle>
 								<AlertDialogDescription>
-									Are you sure you want to delete "{character.name}"? This action cannot be undone.
+									Are you sure you want to delete "{character.name}"? This
+									action cannot be undone.
 								</AlertDialogDescription>
 							</AlertDialogHeader>
 							<AlertDialogFooter>
@@ -198,10 +205,10 @@ export function CharacterDetail({
 
 export function CharacterDetailEmpty() {
 	return (
-		<div className="h-full flex flex-col items-center justify-center text-center p-6">
-			<User className="h-16 w-16 text-muted-foreground mb-4" />
-			<h3 className="text-lg font-semibold">Select a Character</h3>
-			<p className="text-muted-foreground mt-1">
+		<div className="flex h-full flex-col items-center justify-center p-6 text-center">
+			<User className="mb-4 h-16 w-16 text-muted-foreground" />
+			<h3 className="font-semibold text-lg">Select a Character</h3>
+			<p className="mt-1 text-muted-foreground">
 				Choose a character from the list to view their details
 			</p>
 		</div>

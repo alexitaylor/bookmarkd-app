@@ -1,9 +1,9 @@
 import { db } from "../index";
-import { seedGenres } from "./genres";
 import { seedAuthors } from "./authors";
 import { seedBooks } from "./books";
-import { seedCharacters } from "./characters";
 import { seedChapters } from "./chapters";
+import { seedCharacters } from "./characters";
+import { seedGenres } from "./genres";
 import { seedUserBooks } from "./user-books";
 
 async function main() {

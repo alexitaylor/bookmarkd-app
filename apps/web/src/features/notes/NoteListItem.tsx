@@ -20,9 +20,7 @@ interface NoteListItemProps {
 export function NoteListItem({ note, isSelected, onClick }: NoteListItemProps) {
 	// Truncate content to ~60 chars
 	const truncatedContent =
-		note.content.length > 60
-			? note.content.slice(0, 60) + "..."
-			: note.content;
+		note.content.length > 60 ? note.content.slice(0, 60) + "..." : note.content;
 
 	const formattedDate = new Date(note.createdAt).toLocaleDateString("en-US", {
 		month: "short",
@@ -33,20 +31,20 @@ export function NoteListItem({ note, isSelected, onClick }: NoteListItemProps) {
 		<button
 			onClick={onClick}
 			className={cn(
-				"w-full flex items-start gap-3 p-3 text-left transition-colors rounded-md",
+				"flex w-full items-start gap-3 rounded-md p-3 text-left transition-colors",
 				"hover:bg-accent/50",
-				isSelected && "bg-accent border-l-2 border-primary"
+				isSelected && "border-primary border-l-2 bg-accent",
 			)}
 		>
-			<div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center">
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
 				<FileText className="h-5 w-5 text-muted-foreground" />
 			</div>
-			<div className="flex-1 min-w-0">
-				<div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+			<div className="min-w-0 flex-1">
+				<div className="mb-1 flex items-center gap-2 text-muted-foreground text-xs">
 					<span>{formattedDate}</span>
 					{note.pageNumber && <span>· Page {note.pageNumber}</span>}
 				</div>
-				<p className="text-sm truncate">{truncatedContent}</p>
+				<p className="truncate text-sm">{truncatedContent}</p>
 			</div>
 		</button>
 	);

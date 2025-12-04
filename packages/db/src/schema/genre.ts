@@ -1,10 +1,10 @@
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
+	integer,
 	pgTable,
 	serial,
-	varchar,
-	integer,
 	uniqueIndex,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { book } from "./book";
 

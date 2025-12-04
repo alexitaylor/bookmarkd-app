@@ -34,28 +34,31 @@ export function CharacterListItem({
 		<button
 			onClick={onClick}
 			className={cn(
-				"w-full flex items-center gap-3 p-3 text-left transition-colors rounded-md",
+				"flex w-full items-center gap-3 rounded-md p-3 text-left transition-colors",
 				"hover:bg-accent/50",
-				isSelected && "bg-accent border-l-2 border-primary"
+				isSelected && "border-primary border-l-2 bg-accent",
 			)}
 		>
 			<Avatar className="h-10 w-10 shrink-0">
-				<AvatarImage src={character.imageUrl || undefined} alt={character.name} />
+				<AvatarImage
+					src={character.imageUrl || undefined}
+					alt={character.name}
+				/>
 				<AvatarFallback>
 					<User className="h-5 w-5 text-muted-foreground" />
 				</AvatarFallback>
 			</Avatar>
-			<div className="flex-1 min-w-0">
+			<div className="min-w-0 flex-1">
 				<div className="flex items-center gap-2">
-					<span className="font-medium truncate">{character.name}</span>
+					<span className="truncate font-medium">{character.name}</span>
 					{character.aiGenerated && (
-						<span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+						<span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
 							AI
 						</span>
 					)}
 				</div>
 				{truncatedDescription && (
-					<p className="text-sm text-muted-foreground truncate">
+					<p className="truncate text-muted-foreground text-sm">
 						{truncatedDescription}
 					</p>
 				)}

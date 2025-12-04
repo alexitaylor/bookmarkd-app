@@ -1,25 +1,9 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Star, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { orpc, client } from "@/utils/orpc";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -31,7 +15,23 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { client, orpc } from "@/utils/orpc";
 
 interface ReviewsTabProps {
 	bookId: number;
@@ -44,15 +44,15 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 	const queryClient = useQueryClient();
 
 	const { data: reviews, isLoading } = useQuery(
-		orpc.review.list.queryOptions({ input: { bookId, limit: 50 } })
+		orpc.review.list.queryOptions({ input: { bookId, limit: 50 } }),
 	);
 
 	const { data: userReview } = useQuery(
-		orpc.review.getUserReview.queryOptions({ input: { bookId } })
+		orpc.review.getUserReview.queryOptions({ input: { bookId } }),
 	);
 
 	const { data: reviewStats } = useQuery(
-		orpc.review.getStats.queryOptions({ input: { bookId } })
+		orpc.review.getStats.queryOptions({ input: { bookId } }),
 	);
 
 	const createMutation = useMutation({
@@ -117,13 +117,14 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 	return (
 		<div className="space-y-6">
 			{/* Stats & Add Review */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 				<div>
-					<h2 className="text-xl font-semibold">
-						Reviews {reviewStats && reviewStats.count > 0 && `(${reviewStats.count})`}
+					<h2 className="font-semibold text-xl">
+						Reviews{" "}
+						{reviewStats && reviewStats.count > 0 && `(${reviewStats.count})`}
 					</h2>
 					{reviewStats && reviewStats.count > 0 && (
-						<div className="flex items-center gap-2 mt-1">
+						<div className="mt-1 flex items-center gap-2">
 							<div className="flex items-center">
 								{Array.from({ length: 5 }).map((_, i) => (
 									<Star
@@ -136,7 +137,7 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 									/>
 								))}
 							</div>
-							<span className="text-sm text-muted-foreground">
+							<span className="text-muted-foreground text-sm">
 								{reviewStats.avgRating.toFixed(1)} average
 							</span>
 						</div>
@@ -178,7 +179,7 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 																"h-8 w-8 transition-colors",
 																(hoverRating || newReview.rating) >= value
 																	? "fill-yellow-400 text-yellow-400"
-																	: "text-muted-foreground"
+																	: "text-muted-foreground",
 															)}
 														/>
 													</button>
@@ -208,7 +209,9 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 										Cancel
 									</Button>
 									<Button type="submit" disabled={createMutation.isPending}>
-										{createMutation.isPending ? "Submitting..." : "Submit Review"}
+										{createMutation.isPending
+											? "Submitting..."
+											: "Submit Review"}
 									</Button>
 								</DialogFooter>
 							</form>
@@ -224,7 +227,7 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 						<div className="flex items-start justify-between gap-4">
 							<div className="flex-1 space-y-2">
 								<div className="flex items-center gap-2">
-									<span className="text-sm font-medium">Your Review</span>
+									<span className="font-medium text-sm">Your Review</span>
 									<div className="flex items-center">
 										{Array.from({ length: 5 }).map((_, i) => (
 											<Star
@@ -275,9 +278,9 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 			{/* All Reviews */}
 			{!reviews || reviews.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-12 text-center">
-					<Star className="h-12 w-12 text-muted-foreground mb-4" />
-					<h3 className="text-lg font-semibold">No Reviews Yet</h3>
-					<p className="text-muted-foreground mt-1">
+					<Star className="mb-4 h-12 w-12 text-muted-foreground" />
+					<h3 className="font-semibold text-lg">No Reviews Yet</h3>
+					<p className="mt-1 text-muted-foreground">
 						Be the first to share your thoughts!
 					</p>
 				</div>
@@ -312,12 +315,15 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 														))}
 													</div>
 												</div>
-												<span className="text-xs text-muted-foreground">
-													{new Date(review.createdAt).toLocaleDateString("en-US", {
-														month: "short",
-														day: "numeric",
-														year: "numeric",
-													})}
+												<span className="text-muted-foreground text-xs">
+													{new Date(review.createdAt).toLocaleDateString(
+														"en-US",
+														{
+															month: "short",
+															day: "numeric",
+															year: "numeric",
+														},
+													)}
 												</span>
 											</div>
 										</div>
@@ -332,16 +338,19 @@ export function ReviewsTab({ bookId }: ReviewsTabProps) {
 												onClick={() =>
 													voteMutation.mutate({ reviewId: review.id, value: 1 })
 												}
-												className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+												className="flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
 											>
 												<ThumbsUp className="h-4 w-4" />
 												<span>{review.votes?.helpful || 0}</span>
 											</button>
 											<button
 												onClick={() =>
-													voteMutation.mutate({ reviewId: review.id, value: -1 })
+													voteMutation.mutate({
+														reviewId: review.id,
+														value: -1,
+													})
 												}
-												className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+												className="flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
 											>
 												<ThumbsDown className="h-4 w-4" />
 												<span>{review.votes?.notHelpful || 0}</span>

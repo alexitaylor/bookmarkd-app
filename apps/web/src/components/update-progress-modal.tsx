@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -11,7 +12,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -58,7 +58,7 @@ export function UpdateProgressModal({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const pageNum = parseInt(page, 10);
+		const pageNum = Number.parseInt(page, 10);
 		if (isNaN(pageNum) || pageNum < 0) {
 			toast.error("Please enter a valid page number");
 			return;
@@ -70,7 +70,9 @@ export function UpdateProgressModal({
 		updateProgress.mutate(pageNum);
 	};
 
-	const progress = pageCount ? Math.round((parseInt(page, 10) || 0) / pageCount * 100) : 0;
+	const progress = pageCount
+		? Math.round(((Number.parseInt(page, 10) || 0) / pageCount) * 100)
+		: 0;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,7 +98,7 @@ export function UpdateProgressModal({
 									className="flex-1"
 								/>
 								{pageCount && (
-									<span className="text-sm text-muted-foreground whitespace-nowrap">
+									<span className="whitespace-nowrap text-muted-foreground text-sm">
 										of {pageCount}
 									</span>
 								)}

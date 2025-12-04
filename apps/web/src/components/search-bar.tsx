@@ -1,17 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, X, Loader2, Globe, Plus, Check, ExternalLink } from "lucide-react";
-import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { BookCard } from "@/components/book-card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { client } from "@/utils/orpc";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	Check,
+	ExternalLink,
+	Globe,
+	Loader2,
+	Plus,
+	Search,
+	X,
+} from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { BookCard } from "@/components/book-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { client } from "@/utils/orpc";
 
 interface SearchBarProps {
 	className?: string;
@@ -64,7 +72,11 @@ export function SearchBar({
 	const shouldSearch = debouncedQuery.length >= 2;
 
 	// Local search
-	const { data: searchResults, isLoading, isFetching } = useQuery({
+	const {
+		data: searchResults,
+		isLoading,
+		isFetching,
+	} = useQuery({
 		queryKey: ["book", "search", { query: debouncedQuery, limit: 12 }],
 		queryFn: () => client.book.search({ query: debouncedQuery, limit: 12 }),
 		enabled: shouldSearch,
@@ -77,7 +89,8 @@ export function SearchBar({
 		refetch: searchExternal,
 	} = useQuery({
 		queryKey: ["book", "searchExternal", { query: debouncedQuery, limit: 20 }],
-		queryFn: () => client.book.searchExternal({ query: debouncedQuery, limit: 20 }),
+		queryFn: () =>
+			client.book.searchExternal({ query: debouncedQuery, limit: 20 }),
 		enabled: false, // Manual trigger only
 	});
 
@@ -103,7 +116,7 @@ export function SearchBar({
 
 	// Get set of ISBNs that exist in local results
 	const localIsbns = new Set(
-		localResults.flatMap((book) => [book.isbn, book.isbn13].filter(Boolean))
+		localResults.flatMap((book) => [book.isbn, book.isbn13].filter(Boolean)),
 	);
 
 	// Filter out external books that already exist in local results
@@ -121,7 +134,10 @@ export function SearchBar({
 	// Close results when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
-			if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+			if (
+				containerRef.current &&
+				!containerRef.current.contains(event.target as Node)
+			) {
 				setIsFocused(false);
 			}
 		};
@@ -152,27 +168,27 @@ export function SearchBar({
 
 	const getAddedBookId = (book: ExternalBook): number | null => {
 		const isbn = book.isbn13 || book.isbn;
-		return isbn ? addedBooks.get(isbn) ?? null : null;
+		return isbn ? (addedBooks.get(isbn) ?? null) : null;
 	};
 
 	return (
 		<div ref={containerRef} className={cn("relative w-full", className)}>
 			<div className="relative">
-				<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+				<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 				<Input
 					type="search"
 					placeholder={placeholder}
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
 					onFocus={() => setIsFocused(true)}
-					className="pl-10 pr-10 h-12 text-base"
+					className="h-12 pr-10 pl-10 text-base"
 				/>
 				{query && (
 					<Button
 						type="button"
 						variant="ghost"
 						size="icon"
-						className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+						className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8"
 						onClick={handleClear}
 					>
 						{isFetching ? (
@@ -187,7 +203,7 @@ export function SearchBar({
 
 			{/* Search Results */}
 			{showResults && (
-				<div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-lg border bg-background shadow-lg max-h-[70vh] overflow-y-auto">
+				<div className="absolute top-full right-0 left-0 z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-lg border bg-background shadow-lg">
 					<div className="p-4">
 						{isLoading ? (
 							<div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
@@ -201,8 +217,10 @@ export function SearchBar({
 							</div>
 						) : hasLocalResults ? (
 							<>
-								<p className="text-sm text-muted-foreground mb-4">
-									{localResults.length} result{localResults.length !== 1 ? "s" : ""} for &quot;{debouncedQuery}&quot;
+								<p className="mb-4 text-muted-foreground text-sm">
+									{localResults.length} result
+									{localResults.length !== 1 ? "s" : ""} for &quot;
+									{debouncedQuery}&quot;
 								</p>
 								<div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
 									{localResults.map((book) => (
@@ -218,10 +236,10 @@ export function SearchBar({
 								</div>
 
 								{/* Search Online Catalog Section */}
-								<div className="mt-6 pt-4 border-t">
+								<div className="mt-6 border-t pt-4">
 									{!showExternalResults ? (
 										<div className="text-center">
-											<p className="text-sm text-muted-foreground mb-2">
+											<p className="mb-2 text-muted-foreground text-sm">
 												Can&apos;t find what you&apos;re looking for?
 											</p>
 											<Button
@@ -234,29 +252,32 @@ export function SearchBar({
 											</Button>
 										</div>
 									) : isLoadingExternal ? (
-										<div className="text-center py-4">
-											<Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
-											<p className="text-sm text-muted-foreground mt-2">
+										<div className="py-4 text-center">
+											<Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+											<p className="mt-2 text-muted-foreground text-sm">
 												Searching online catalog...
 											</p>
 										</div>
 									) : externalBooks.length > 0 ? (
 										<div>
-											<p className="text-sm text-muted-foreground mb-3">
-												Found {externalBooks.length} more book{externalBooks.length !== 1 ? "s" : ""} in online catalog
+											<p className="mb-3 text-muted-foreground text-sm">
+												Found {externalBooks.length} more book
+												{externalBooks.length !== 1 ? "s" : ""} in online
+												catalog
 											</p>
 											<div className="space-y-2">
 												{externalBooks.map((book, index) => {
 													const isbn = book.isbn13 || book.isbn;
 													const addedBookId = getAddedBookId(book);
 													const isAdded = addedBookId !== null;
-													const isAdding = addBookMutation.isPending &&
+													const isAdding =
+														addBookMutation.isPending &&
 														addBookMutation.variables === isbn;
 
 													return (
 														<div
 															key={isbn || index}
-															className="flex items-center gap-3 p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+															className="flex items-center gap-3 rounded-lg border bg-card p-2 transition-colors hover:bg-accent/50"
 														>
 															<div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded bg-muted">
 																{book.coverUrl ? (
@@ -273,18 +294,22 @@ export function SearchBar({
 																	</div>
 																)}
 															</div>
-															<div className="flex-1 min-w-0">
-																<p className="font-medium text-sm truncate">{book.title}</p>
+															<div className="min-w-0 flex-1">
+																<p className="truncate font-medium text-sm">
+																	{book.title}
+																</p>
 																{book.authors.length > 0 && (
-																	<p className="text-xs text-muted-foreground truncate">
+																	<p className="truncate text-muted-foreground text-xs">
 																		{book.authors.join(", ")}
 																	</p>
 																)}
-																<p className="text-xs text-muted-foreground truncate">
+																<p className="truncate text-muted-foreground text-xs">
 																	{[
 																		book.publisher,
 																		book.datePublished,
-																		book.pageCount ? `${book.pageCount} pages` : null,
+																		book.pageCount
+																			? `${book.pageCount} pages`
+																			: null,
 																	]
 																		.filter(Boolean)
 																		.join(" • ")}
@@ -293,7 +318,7 @@ export function SearchBar({
 															{isAdded ? (
 																<Link
 																	href={`/books/${addedBookId}` as "/"}
-																	className="flex-shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
+																	className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md font-medium text-sm ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
 																>
 																	<ExternalLink className="h-4 w-4" />
 																	<span className="sr-only">View book</span>
@@ -304,7 +329,7 @@ export function SearchBar({
 																	size="sm"
 																	disabled={!isbn || isAdding}
 																	onClick={() => handleAddBook(book)}
-																	className="flex-shrink-0 h-8"
+																	className="h-8 flex-shrink-0"
 																>
 																	{isAdding ? (
 																		<Loader2 className="h-4 w-4 animate-spin" />
@@ -319,7 +344,7 @@ export function SearchBar({
 											</div>
 										</div>
 									) : (
-										<p className="text-sm text-muted-foreground text-center">
+										<p className="text-center text-muted-foreground text-sm">
 											No additional books found in online catalog.
 										</p>
 									)}
@@ -328,7 +353,8 @@ export function SearchBar({
 						) : (
 							<div className="py-6 text-center">
 								<p className="text-muted-foreground">
-									No books found in your library for &quot;{debouncedQuery}&quot;
+									No books found in your library for &quot;{debouncedQuery}
+									&quot;
 								</p>
 
 								{/* Search Online Catalog Button */}
@@ -346,110 +372,120 @@ export function SearchBar({
 								{/* External Results Loading */}
 								{showExternalResults && isLoadingExternal && (
 									<div className="mt-6">
-										<Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-										<p className="text-sm text-muted-foreground mt-2">
+										<Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+										<p className="mt-2 text-muted-foreground text-sm">
 											Searching online catalog...
 										</p>
 									</div>
 								)}
 
 								{/* External Results */}
-								{showExternalResults && !isLoadingExternal && externalBooks.length > 0 && (
-									<div className="mt-6 text-left">
-										<p className="text-sm text-muted-foreground mb-4">
-											Found {externalBooks.length} book{externalBooks.length !== 1 ? "s" : ""} in online catalog
-										</p>
-										<div className="space-y-3">
-											{externalBooks.map((book, index) => {
-												const isbn = book.isbn13 || book.isbn;
-												const addedBookId = getAddedBookId(book);
-												const isAdded = addedBookId !== null;
-												const isAdding = addBookMutation.isPending &&
-													addBookMutation.variables === isbn;
+								{showExternalResults &&
+									!isLoadingExternal &&
+									externalBooks.length > 0 && (
+										<div className="mt-6 text-left">
+											<p className="mb-4 text-muted-foreground text-sm">
+												Found {externalBooks.length} book
+												{externalBooks.length !== 1 ? "s" : ""} in online
+												catalog
+											</p>
+											<div className="space-y-3">
+												{externalBooks.map((book, index) => {
+													const isbn = book.isbn13 || book.isbn;
+													const addedBookId = getAddedBookId(book);
+													const isAdded = addedBookId !== null;
+													const isAdding =
+														addBookMutation.isPending &&
+														addBookMutation.variables === isbn;
 
-												return (
-													<div
-														key={isbn || index}
-														className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-													>
-														{/* Cover */}
-														<div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded bg-muted">
-															{book.coverUrl ? (
-																<Image
-																	src={book.coverUrl}
-																	alt={book.title}
-																	fill
-																	className="object-cover"
-																	sizes="44px"
-																/>
-															) : (
-																<div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-																	No cover
-																</div>
-															)}
-														</div>
-
-														{/* Info */}
-														<div className="flex-1 min-w-0">
-															<p className="font-medium text-sm truncate">
-																{book.title}
-															</p>
-															{book.authors.length > 0 && (
-																<p className="text-xs text-muted-foreground truncate">
-																	{book.authors.join(", ")}
-																</p>
-															)}
-															<p className="text-xs text-muted-foreground truncate">
-																{[
-																	book.publisher,
-																	book.datePublished,
-																	book.pageCount ? `${book.pageCount} pages` : null,
-																]
-																	.filter(Boolean)
-																	.join(" • ")}
-															</p>
-														</div>
-
-														{/* Add Button or Link */}
-														{isAdded ? (
-															<Link
-																href={`/books/${addedBookId}` as "/"}
-																className="flex-shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
-															>
-																<ExternalLink className="h-4 w-4" />
-																<span className="sr-only">View book</span>
-															</Link>
-														) : (
-															<Button
-																variant="outline"
-																size="sm"
-																disabled={!isbn || isAdding}
-																onClick={() => handleAddBook(book)}
-																className="flex-shrink-0"
-															>
-																{isAdding ? (
-																	<Loader2 className="h-4 w-4 animate-spin" />
+													return (
+														<div
+															key={isbn || index}
+															className="flex items-center gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50"
+														>
+															{/* Cover */}
+															<div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded bg-muted">
+																{book.coverUrl ? (
+																	<Image
+																		src={book.coverUrl}
+																		alt={book.title}
+																		fill
+																		className="object-cover"
+																		sizes="44px"
+																	/>
 																) : (
-																	<>
-																		<Plus className="h-4 w-4 mr-1" />
-																		Add
-																	</>
+																	<div className="flex h-full items-center justify-center text-muted-foreground text-xs">
+																		No cover
+																	</div>
 																)}
-															</Button>
-														)}
-													</div>
-												);
-											})}
+															</div>
+
+															{/* Info */}
+															<div className="min-w-0 flex-1">
+																<p className="truncate font-medium text-sm">
+																	{book.title}
+																</p>
+																{book.authors.length > 0 && (
+																	<p className="truncate text-muted-foreground text-xs">
+																		{book.authors.join(", ")}
+																	</p>
+																)}
+																<p className="truncate text-muted-foreground text-xs">
+																	{[
+																		book.publisher,
+																		book.datePublished,
+																		book.pageCount
+																			? `${book.pageCount} pages`
+																			: null,
+																	]
+																		.filter(Boolean)
+																		.join(" • ")}
+																</p>
+															</div>
+
+															{/* Add Button or Link */}
+															{isAdded ? (
+																<Link
+																	href={`/books/${addedBookId}` as "/"}
+																	className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md font-medium text-sm ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
+																>
+																	<ExternalLink className="h-4 w-4" />
+																	<span className="sr-only">View book</span>
+																</Link>
+															) : (
+																<Button
+																	variant="outline"
+																	size="sm"
+																	disabled={!isbn || isAdding}
+																	onClick={() => handleAddBook(book)}
+																	className="flex-shrink-0"
+																>
+																	{isAdding ? (
+																		<Loader2 className="h-4 w-4 animate-spin" />
+																	) : (
+																		<>
+																			<Plus className="mr-1 h-4 w-4" />
+																			Add
+																		</>
+																	)}
+																</Button>
+															)}
+														</div>
+													);
+												})}
+											</div>
 										</div>
-									</div>
-								)}
+									)}
 
 								{/* No External Results */}
-								{showExternalResults && !isLoadingExternal && externalBooks.length === 0 && (
-									<p className="text-sm text-muted-foreground mt-4">
-										No books found in online catalog either. Try different keywords.
-									</p>
-								)}
+								{showExternalResults &&
+									!isLoadingExternal &&
+									externalBooks.length === 0 && (
+										<p className="mt-4 text-muted-foreground text-sm">
+											No books found in online catalog either. Try different
+											keywords.
+										</p>
+									)}
 							</div>
 						)}
 					</div>

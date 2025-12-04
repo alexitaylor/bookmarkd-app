@@ -1,4 +1,4 @@
-import * as React from "react";
+import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -28,13 +28,13 @@ function Progress({
 				<div
 					className={cn(
 						"h-full bg-primary transition-all duration-300 ease-in-out",
-						indicatorClassName
+						indicatorClassName,
 					)}
 					style={{ width: `${percentage}%` }}
 				/>
 			</div>
 			{showLabel && (
-				<span className="mt-1 text-xs text-muted-foreground">
+				<span className="mt-1 text-muted-foreground text-xs">
 					{Math.round(percentage)}%
 				</span>
 			)}

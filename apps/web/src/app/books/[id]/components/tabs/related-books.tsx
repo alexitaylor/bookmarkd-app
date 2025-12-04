@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { orpc } from "@/utils/orpc";
 import { BookCard } from "@/components/book-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { orpc } from "@/utils/orpc";
 
 interface RelatedBooksProps {
 	bookId: number;
@@ -11,13 +11,13 @@ interface RelatedBooksProps {
 
 export function RelatedBooks({ bookId }: RelatedBooksProps) {
 	const { data: relatedBooks, isLoading } = useQuery(
-		orpc.book.getRelated.queryOptions({ input: { bookId, limit: 6 } })
+		orpc.book.getRelated.queryOptions({ input: { bookId, limit: 6 } }),
 	);
 
 	if (isLoading) {
 		return (
 			<section>
-				<h2 className="text-xl font-semibold mb-4">Related Books</h2>
+				<h2 className="mb-4 font-semibold text-xl">Related Books</h2>
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 					{Array.from({ length: 6 }).map((_, i) => (
 						<div key={i} className="space-y-2">
@@ -37,7 +37,7 @@ export function RelatedBooks({ bookId }: RelatedBooksProps) {
 
 	return (
 		<section>
-			<h2 className="text-xl font-semibold mb-4">Related Books</h2>
+			<h2 className="mb-4 font-semibold text-xl">Related Books</h2>
 			<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 				{relatedBooks.map((book) => (
 					<BookCard

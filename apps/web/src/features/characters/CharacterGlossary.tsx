@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
-import { orpc } from "@/utils/orpc";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { CharacterList } from "./CharacterList";
-import { CharacterDetail, CharacterDetailEmpty } from "./CharacterDetail";
+import { useEffect, useState } from "react";
 import { AddCharacterDialog } from "@/app/books/[id]/components/add-character-dialog";
 import { EditCharacterDialog } from "@/app/books/[id]/components/edit-character-dialog";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { orpc } from "@/utils/orpc";
+import { CharacterDetail, CharacterDetailEmpty } from "./CharacterDetail";
+import { CharacterList } from "./CharacterList";
 
 interface Character {
 	id: number;
@@ -27,11 +27,13 @@ interface CharacterGlossaryProps {
 export function CharacterGlossary({ bookId }: CharacterGlossaryProps) {
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [isAddOpen, setIsAddOpen] = useState(false);
-	const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
+	const [editingCharacter, setEditingCharacter] = useState<Character | null>(
+		null,
+	);
 	const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
 
 	const { data: characters, isLoading } = useQuery(
-		orpc.character.getByBookId.queryOptions({ input: { bookId, limit: 100 } })
+		orpc.character.getByBookId.queryOptions({ input: { bookId, limit: 100 } }),
 	);
 
 	// Auto-select first character when loaded
@@ -43,13 +45,18 @@ export function CharacterGlossary({ bookId }: CharacterGlossaryProps) {
 
 	// Clear selection if selected character is deleted
 	useEffect(() => {
-		if (selectedId && characters && !characters.find((c) => c.id === selectedId)) {
+		if (
+			selectedId &&
+			characters &&
+			!characters.find((c) => c.id === selectedId)
+		) {
 			setSelectedId(characters.length > 0 ? characters[0].id : null);
 			setIsMobileDetailOpen(false);
 		}
 	}, [characters, selectedId]);
 
-	const selectedCharacter = characters?.find((c) => c.id === selectedId) || null;
+	const selectedCharacter =
+		characters?.find((c) => c.id === selectedId) || null;
 
 	const handleSelect = (id: number) => {
 		setSelectedId(id);
@@ -68,14 +75,14 @@ export function CharacterGlossary({ bookId }: CharacterGlossaryProps) {
 
 	if (isLoading) {
 		return (
-			<div className="grid md:grid-cols-[300px_1fr] h-[600px] border rounded-lg overflow-hidden">
-				<div className="border-r p-3 space-y-3">
+			<div className="grid h-[600px] overflow-hidden rounded-lg border md:grid-cols-[300px_1fr]">
+				<div className="space-y-3 border-r p-3">
 					<Skeleton className="h-10 w-full" />
 					{Array.from({ length: 5 }).map((_, i) => (
 						<Skeleton key={i} className="h-16 w-full" />
 					))}
 				</div>
-				<div className="p-6 space-y-4 hidden md:block">
+				<div className="hidden space-y-4 p-6 md:block">
 					<Skeleton className="h-20 w-20 rounded-full" />
 					<Skeleton className="h-8 w-48" />
 					<Skeleton className="h-4 w-full" />
@@ -87,10 +94,10 @@ export function CharacterGlossary({ bookId }: CharacterGlossaryProps) {
 
 	if (!characters || characters.length === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-				<Users className="h-12 w-12 text-muted-foreground mb-4" />
-				<h3 className="text-lg font-semibold">No Characters Yet</h3>
-				<p className="text-muted-foreground mt-1 mb-4">
+			<div className="flex flex-col items-center justify-center rounded-lg border py-12 text-center">
+				<Users className="mb-4 h-12 w-12 text-muted-foreground" />
+				<h3 className="font-semibold text-lg">No Characters Yet</h3>
+				<p className="mt-1 mb-4 text-muted-foreground">
 					Characters for this book haven&apos;t been added yet.
 				</p>
 				<Button onClick={() => setIsAddOpen(true)}>Add Character</Button>
@@ -105,10 +112,10 @@ export function CharacterGlossary({ bookId }: CharacterGlossaryProps) {
 
 	return (
 		<>
-			<div className="grid md:grid-cols-[300px_1fr] h-[600px] border rounded-lg overflow-hidden">
+			<div className="grid h-[600px] overflow-hidden rounded-lg border md:grid-cols-[300px_1fr]">
 				{/* Left Panel - Character List */}
 				<div
-					className={`border-r bg-background min-h-0 ${
+					className={`min-h-0 border-r bg-background ${
 						isMobileDetailOpen ? "hidden md:flex md:flex-col" : "flex flex-col"
 					}`}
 				>

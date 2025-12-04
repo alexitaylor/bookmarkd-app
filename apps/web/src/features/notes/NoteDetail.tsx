@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { client } from "@/utils/orpc";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -20,6 +15,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -28,6 +24,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "@/utils/orpc";
 
 interface Note {
 	id: number;
@@ -51,7 +51,7 @@ export function NoteDetail({
 	const [isEditOpen, setIsEditOpen] = useState(false);
 	const [editContent, setEditContent] = useState(note.content);
 	const [editPageNumber, setEditPageNumber] = useState(
-		note.pageNumber?.toString() || ""
+		note.pageNumber?.toString() || "",
 	);
 	const queryClient = useQueryClient();
 
@@ -94,7 +94,9 @@ export function NoteDetail({
 		updateMutation.mutate({
 			id: note.id,
 			content: editContent,
-			pageNumber: editPageNumber ? parseInt(editPageNumber, 10) : undefined,
+			pageNumber: editPageNumber
+				? Number.parseInt(editPageNumber, 10)
+				: undefined,
 		});
 	};
 
@@ -108,23 +110,23 @@ export function NoteDetail({
 		<div className="h-full overflow-y-auto">
 			{/* Mobile Back Button */}
 			{showBackButton && onBack && (
-				<div className="p-4 border-b md:hidden">
+				<div className="border-b p-4 md:hidden">
 					<Button variant="ghost" size="sm" onClick={onBack}>
-						<ArrowLeft className="h-4 w-4 mr-2" />
+						<ArrowLeft className="mr-2 h-4 w-4" />
 						Back to Notes
 					</Button>
 				</div>
 			)}
 
-			<div className="p-6 space-y-6">
+			<div className="space-y-6 p-6">
 				{/* Header */}
 				<div className="flex items-start gap-4">
-					<div className="h-12 w-12 shrink-0 rounded-full bg-muted flex items-center justify-center">
+					<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
 						<FileText className="h-6 w-6 text-muted-foreground" />
 					</div>
-					<div className="flex-1 min-w-0">
-						<h2 className="text-lg font-semibold">Note</h2>
-						<div className="flex items-center gap-2 text-sm text-muted-foreground">
+					<div className="min-w-0 flex-1">
+						<h2 className="font-semibold text-lg">Note</h2>
+						<div className="flex items-center gap-2 text-muted-foreground text-sm">
 							<span>{formattedDate}</span>
 							{note.pageNumber && <span>· Page {note.pageNumber}</span>}
 						</div>
@@ -133,16 +135,16 @@ export function NoteDetail({
 
 				{/* Content */}
 				<div>
-					<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+					<h3 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
 						Content
 					</h3>
 					<p className="whitespace-pre-wrap leading-relaxed">{note.content}</p>
 				</div>
 
 				{/* Actions */}
-				<div className="flex items-center gap-2 pt-4 border-t">
+				<div className="flex items-center gap-2 border-t pt-4">
 					<Button onClick={handleEdit}>
-						<Pencil className="h-4 w-4 mr-2" />
+						<Pencil className="mr-2 h-4 w-4" />
 						Edit
 					</Button>
 					<AlertDialog>
@@ -151,7 +153,7 @@ export function NoteDetail({
 								variant="outline"
 								className="text-destructive hover:text-destructive"
 							>
-								<Trash2 className="h-4 w-4 mr-2" />
+								<Trash2 className="mr-2 h-4 w-4" />
 								Delete
 							</Button>
 						</AlertDialogTrigger>
@@ -227,10 +229,10 @@ export function NoteDetail({
 
 export function NoteDetailEmpty() {
 	return (
-		<div className="h-full flex flex-col items-center justify-center text-center p-6">
-			<FileText className="h-16 w-16 text-muted-foreground mb-4" />
-			<h3 className="text-lg font-semibold">Select a Note</h3>
-			<p className="text-muted-foreground mt-1">
+		<div className="flex h-full flex-col items-center justify-center p-6 text-center">
+			<FileText className="mb-4 h-16 w-16 text-muted-foreground" />
+			<h3 className="font-semibold text-lg">Select a Note</h3>
+			<p className="mt-1 text-muted-foreground">
 				Choose a note from the list to view its content
 			</p>
 		</div>

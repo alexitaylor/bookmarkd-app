@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
-import { Client } from "pg";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { Client } from "pg";
 
 dotenv.config({
 	path: "../../apps/server/.env",
@@ -16,7 +16,10 @@ async function setupSearch() {
 		await client.connect();
 		console.log("Connected to database");
 
-		const sql = readFileSync(join(import.meta.dir, "setup-search.sql"), "utf-8");
+		const sql = readFileSync(
+			join(import.meta.dir, "setup-search.sql"),
+			"utf-8",
+		);
 
 		await client.query(sql);
 		console.log("✓ pg_trgm extension enabled");

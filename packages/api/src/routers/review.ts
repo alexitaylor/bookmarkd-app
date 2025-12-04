@@ -58,7 +58,9 @@ export const reviewRouter = {
 			const [stats] = await db
 				.select({
 					count: sql<number>`count(*)`.as("count"),
-					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as("avg_rating"),
+					avgRating: sql<number>`coalesce(avg(${review.rating}), 0)`.as(
+						"avg_rating",
+					),
 				})
 				.from(review)
 				.where(eq(review.bookId, input.bookId));

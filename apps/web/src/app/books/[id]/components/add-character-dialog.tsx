@@ -1,15 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, X, User, Sparkles } from "lucide-react";
+import { Plus, Sparkles, User, X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { client } from "@/utils/orpc";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -18,6 +14,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -25,6 +23,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "@/utils/orpc";
 
 interface AddCharacterDialogProps {
 	bookId: number;
@@ -33,13 +33,41 @@ interface AddCharacterDialogProps {
 }
 
 const CHARACTER_ROLES = [
-	{ value: "protagonist", label: "Protagonist", description: "Main character driving the story" },
-	{ value: "antagonist", label: "Antagonist", description: "Primary opposing force" },
-	{ value: "supporting", label: "Supporting", description: "Important secondary character" },
-	{ value: "minor", label: "Minor", description: "Appears briefly or occasionally" },
-	{ value: "mentor", label: "Mentor", description: "Guides or teaches the protagonist" },
-	{ value: "love-interest", label: "Love Interest", description: "Romantic connection" },
-	{ value: "sidekick", label: "Sidekick", description: "Loyal companion to main character" },
+	{
+		value: "protagonist",
+		label: "Protagonist",
+		description: "Main character driving the story",
+	},
+	{
+		value: "antagonist",
+		label: "Antagonist",
+		description: "Primary opposing force",
+	},
+	{
+		value: "supporting",
+		label: "Supporting",
+		description: "Important secondary character",
+	},
+	{
+		value: "minor",
+		label: "Minor",
+		description: "Appears briefly or occasionally",
+	},
+	{
+		value: "mentor",
+		label: "Mentor",
+		description: "Guides or teaches the protagonist",
+	},
+	{
+		value: "love-interest",
+		label: "Love Interest",
+		description: "Romantic connection",
+	},
+	{
+		value: "sidekick",
+		label: "Sidekick",
+		description: "Loyal companion to main character",
+	},
 	{ value: "narrator", label: "Narrator", description: "Tells the story" },
 ];
 
@@ -143,14 +171,15 @@ export function AddCharacterDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<User className="h-5 w-5" />
 						Add Character
 					</DialogTitle>
 					<DialogDescription>
-						Add a new character from this book. Include as much detail as you'd like to help others understand the character.
+						Add a new character from this book. Include as much detail as you'd
+						like to help others understand the character.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit}>
@@ -191,7 +220,7 @@ export function AddCharacterDialog({
 								value={imageUrl}
 								onChange={(e) => setImageUrl(e.target.value)}
 							/>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-muted-foreground text-xs">
 								Link to an image representing this character
 							</p>
 						</div>
@@ -208,7 +237,7 @@ export function AddCharacterDialog({
 										<SelectItem key={r.value} value={r.value}>
 											<div className="flex flex-col">
 												<span>{r.label}</span>
-												<span className="text-xs text-muted-foreground">
+												<span className="text-muted-foreground text-xs">
 													{r.description}
 												</span>
 											</div>
@@ -232,7 +261,7 @@ export function AddCharacterDialog({
 								value={traits}
 								onChange={(e) => setTraits(e.target.value)}
 							/>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-muted-foreground text-xs">
 								Comma-separated list of key personality traits
 							</p>
 						</div>
@@ -259,7 +288,7 @@ export function AddCharacterDialog({
 								</Button>
 							</div>
 							{aliases.length > 0 && (
-								<div className="flex flex-wrap gap-2 mt-2">
+								<div className="mt-2 flex flex-wrap gap-2">
 									{aliases.map((alias) => (
 										<Badge
 											key={alias}

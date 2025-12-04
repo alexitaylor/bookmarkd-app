@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, BookMarked, BookOpen, CheckCircle, XCircle } from "lucide-react";
+import { BookMarked, BookOpen, CheckCircle, Plus, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,11 +20,27 @@ interface AddToShelfButtonProps {
 	size?: "default" | "sm" | "lg" | "icon";
 }
 
-const statusOptions: { value: BookStatus; label: string; icon: React.ReactNode }[] = [
-	{ value: "WantToRead", label: "Want to Read", icon: <BookMarked className="h-4 w-4" /> },
-	{ value: "CurrentlyReading", label: "Currently Reading", icon: <BookOpen className="h-4 w-4" /> },
+const statusOptions: {
+	value: BookStatus;
+	label: string;
+	icon: React.ReactNode;
+}[] = [
+	{
+		value: "WantToRead",
+		label: "Want to Read",
+		icon: <BookMarked className="h-4 w-4" />,
+	},
+	{
+		value: "CurrentlyReading",
+		label: "Currently Reading",
+		icon: <BookOpen className="h-4 w-4" />,
+	},
 	{ value: "Read", label: "Read", icon: <CheckCircle className="h-4 w-4" /> },
-	{ value: "DNF", label: "Did Not Finish", icon: <XCircle className="h-4 w-4" /> },
+	{
+		value: "DNF",
+		label: "Did Not Finish",
+		icon: <XCircle className="h-4 w-4" />,
+	},
 ];
 
 export function AddToShelfButton({
@@ -39,7 +55,9 @@ export function AddToShelfButton({
 			return client.userBook.updateStatus({ bookId, status });
 		},
 		onSuccess: (_, status) => {
-			toast.success(`Book added to "${statusOptions.find((s) => s.value === status)?.label}"`);
+			toast.success(
+				`Book added to "${statusOptions.find((s) => s.value === status)?.label}"`,
+			);
 			queryClient.invalidateQueries({ queryKey: ["userBook"] });
 		},
 		onError: (error) => {
@@ -52,16 +70,23 @@ export function AddToShelfButton({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant={currentStatus && currentStatus !== "None" ? "secondary" : "outline"} size={size}>
+				<Button
+					variant={
+						currentStatus && currentStatus !== "None" ? "secondary" : "outline"
+					}
+					size={size}
+				>
 					{currentOption ? (
 						<>
 							{currentOption.icon}
-							<span className="hidden sm:inline ml-1">{currentOption.label}</span>
+							<span className="ml-1 hidden sm:inline">
+								{currentOption.label}
+							</span>
 						</>
 					) : (
 						<>
 							<Plus className="h-4 w-4" />
-							<span className="hidden sm:inline ml-1">Add to Shelf</span>
+							<span className="ml-1 hidden sm:inline">Add to Shelf</span>
 						</>
 					)}
 				</Button>

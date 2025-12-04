@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
-import z from "zod";
 import { db } from "@bookmarkd/db";
 import { todo } from "@bookmarkd/db/schema/todo";
+import { eq } from "drizzle-orm";
+import z from "zod";
 import { publicProcedure } from "../index";
 
 export const todoRouter = {

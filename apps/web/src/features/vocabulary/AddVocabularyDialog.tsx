@@ -1,13 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
-import { client } from "@/utils/orpc";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Dialog,
 	DialogContent,
@@ -16,6 +12,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "@/utils/orpc";
 
 interface AddVocabularyDialogProps {
 	bookId: number;
@@ -71,7 +71,7 @@ export function AddVocabularyDialog({
 			word: word.trim(),
 			definition: definition.trim() || undefined,
 			contextSentence: contextSentence.trim() || undefined,
-			pageNumber: pageNumber ? parseInt(pageNumber, 10) : undefined,
+			pageNumber: pageNumber ? Number.parseInt(pageNumber, 10) : undefined,
 		});
 	};
 

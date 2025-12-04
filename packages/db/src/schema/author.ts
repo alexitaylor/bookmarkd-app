@@ -1,9 +1,9 @@
 import {
+	integer,
 	pgTable,
 	serial,
-	varchar,
-	integer,
 	uniqueIndex,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { book } from "./book";
 

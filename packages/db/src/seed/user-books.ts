@@ -8,7 +8,7 @@ const TEST_USER_ID = "zM6Xs57VpVXJUoVF5hy2puZSpvbOxGjm";
 
 export async function seedUserBooks(
 	db: NodePgDatabase,
-	bookIds: Record<string, number>
+	bookIds: Record<string, number>,
 ) {
 	// Clear existing user books for this user
 	await db.delete(userBook);

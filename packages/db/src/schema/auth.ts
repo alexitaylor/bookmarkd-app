@@ -1,12 +1,12 @@
 import {
-	pgTable,
-	text,
-	timestamp,
 	boolean,
 	index,
-	serial,
-	varchar,
 	integer,
+	pgTable,
+	serial,
+	text,
+	timestamp,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { roleEnum } from "./enums";
 

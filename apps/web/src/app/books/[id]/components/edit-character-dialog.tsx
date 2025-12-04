@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, X, User, Sparkles } from "lucide-react";
+import { Plus, Sparkles, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { client } from "@/utils/orpc";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -18,6 +14,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -25,6 +23,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "@/utils/orpc";
 
 interface Character {
 	id: number;
@@ -42,13 +42,41 @@ interface EditCharacterDialogProps {
 }
 
 const CHARACTER_ROLES = [
-	{ value: "protagonist", label: "Protagonist", description: "Main character driving the story" },
-	{ value: "antagonist", label: "Antagonist", description: "Primary opposing force" },
-	{ value: "supporting", label: "Supporting", description: "Important secondary character" },
-	{ value: "minor", label: "Minor", description: "Appears briefly or occasionally" },
-	{ value: "mentor", label: "Mentor", description: "Guides or teaches the protagonist" },
-	{ value: "love-interest", label: "Love Interest", description: "Romantic connection" },
-	{ value: "sidekick", label: "Sidekick", description: "Loyal companion to main character" },
+	{
+		value: "protagonist",
+		label: "Protagonist",
+		description: "Main character driving the story",
+	},
+	{
+		value: "antagonist",
+		label: "Antagonist",
+		description: "Primary opposing force",
+	},
+	{
+		value: "supporting",
+		label: "Supporting",
+		description: "Important secondary character",
+	},
+	{
+		value: "minor",
+		label: "Minor",
+		description: "Appears briefly or occasionally",
+	},
+	{
+		value: "mentor",
+		label: "Mentor",
+		description: "Guides or teaches the protagonist",
+	},
+	{
+		value: "love-interest",
+		label: "Love Interest",
+		description: "Romantic connection",
+	},
+	{
+		value: "sidekick",
+		label: "Sidekick",
+		description: "Loyal companion to main character",
+	},
 	{ value: "narrator", label: "Narrator", description: "Tells the story" },
 ];
 
@@ -157,7 +185,7 @@ export function EditCharacterDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<User className="h-5 w-5" />
@@ -205,7 +233,7 @@ export function EditCharacterDialog({
 								value={imageUrl}
 								onChange={(e) => setImageUrl(e.target.value)}
 							/>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-muted-foreground text-xs">
 								Link to an image representing this character
 							</p>
 						</div>
@@ -222,7 +250,7 @@ export function EditCharacterDialog({
 										<SelectItem key={r.value} value={r.value}>
 											<div className="flex flex-col">
 												<span>{r.label}</span>
-												<span className="text-xs text-muted-foreground">
+												<span className="text-muted-foreground text-xs">
 													{r.description}
 												</span>
 											</div>
@@ -246,14 +274,18 @@ export function EditCharacterDialog({
 								value={traits}
 								onChange={(e) => setTraits(e.target.value)}
 							/>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-muted-foreground text-xs">
 								Comma-separated list of key personality traits
 							</p>
 						</div>
 					</div>
 
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={updateMutation.isPending}>

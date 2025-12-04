@@ -1,13 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { orpc, client } from "@/utils/orpc";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
 	Dialog,
 	DialogContent,
@@ -16,7 +13,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { client, orpc } from "@/utils/orpc";
 
 interface WriteReviewDialogProps {
 	bookId: number;
@@ -34,7 +34,7 @@ export function WriteReviewDialog({
 	const queryClient = useQueryClient();
 
 	const { data: userReview } = useQuery(
-		orpc.review.getUserReview.queryOptions({ input: { bookId } })
+		orpc.review.getUserReview.queryOptions({ input: { bookId } }),
 	);
 
 	const createMutation = useMutation({
@@ -106,7 +106,7 @@ export function WriteReviewDialog({
 													"h-8 w-8 transition-colors",
 													(hoverRating || newReview.rating) >= value
 														? "fill-yellow-400 text-yellow-400"
-														: "text-muted-foreground"
+														: "text-muted-foreground",
 												)}
 											/>
 										</button>

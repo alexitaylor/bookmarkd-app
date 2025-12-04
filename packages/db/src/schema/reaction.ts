@@ -1,17 +1,17 @@
 import {
+	index,
+	integer,
 	pgTable,
 	serial,
 	text,
-	integer,
 	timestamp,
 	uniqueIndex,
-	index,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { comment } from "./comment";
-import { review } from "./review";
-import { note } from "./note";
 import { reactionEnum } from "./enums";
+import { note } from "./note";
+import { review } from "./review";
 
 export const reaction = pgTable(
 	"reaction",

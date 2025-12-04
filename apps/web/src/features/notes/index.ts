@@ -1,5 +1,5 @@
-export { NotesGlossary } from "./NotesGlossary";
+export { AddNoteDialog } from "./AddNoteDialog";
+export { NoteDetail, NoteDetailEmpty } from "./NoteDetail";
 export { NoteList } from "./NoteList";
 export { NoteListItem } from "./NoteListItem";
-export { NoteDetail, NoteDetailEmpty } from "./NoteDetail";
-export { AddNoteDialog } from "./AddNoteDialog";
+export { NotesGlossary } from "./NotesGlossary";

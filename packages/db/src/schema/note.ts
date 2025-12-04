@@ -1,11 +1,11 @@
 import {
+	boolean,
+	index,
+	integer,
 	pgTable,
 	serial,
 	text,
-	integer,
 	timestamp,
-	boolean,
-	index,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { book } from "./book";

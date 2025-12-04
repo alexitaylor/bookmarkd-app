@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, Plus, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CharacterListItem } from "./CharacterListItem";
 
 interface Character {
@@ -36,26 +36,26 @@ export function CharacterList({
 		return characters.filter(
 			(c) =>
 				c.name.toLowerCase().includes(query) ||
-				c.description?.toLowerCase().includes(query)
+				c.description?.toLowerCase().includes(query),
 		);
 	}, [characters, searchQuery]);
 
 	return (
-		<div className="flex flex-col h-full min-h-0">
+		<div className="flex h-full min-h-0 flex-col">
 			{/* Search Input */}
-			<div className="p-3 border-b">
+			<div className="border-b p-3">
 				<div className="relative">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 					<Input
 						placeholder="Search characters..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-9 pr-9"
+						className="pr-9 pl-9"
 					/>
 					{searchQuery && (
 						<button
 							onClick={() => setSearchQuery("")}
-							className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+							className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
 						>
 							<X className="h-4 w-4" />
 						</button>
@@ -64,9 +64,9 @@ export function CharacterList({
 			</div>
 
 			{/* Character List */}
-			<div className="flex-1 min-h-0 overflow-y-auto p-2">
+			<div className="min-h-0 flex-1 overflow-y-auto p-2">
 				{filteredCharacters.length === 0 ? (
-					<div className="text-center py-8 text-muted-foreground">
+					<div className="py-8 text-center text-muted-foreground">
 						{searchQuery ? "No characters found" : "No characters yet"}
 					</div>
 				) : (
@@ -84,9 +84,9 @@ export function CharacterList({
 			</div>
 
 			{/* Add Character Button */}
-			<div className="p-3 border-t">
+			<div className="border-t p-3">
 				<Button onClick={onAddCharacter} className="w-full">
-					<Plus className="h-4 w-4 mr-2" />
+					<Plus className="mr-2 h-4 w-4" />
 					Add Character
 				</Button>
 			</div>

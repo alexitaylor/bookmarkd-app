@@ -1,6 +1,6 @@
 "use client";
-import { authClient } from "@/lib/auth-client";
 import { useQuery } from "@tanstack/react-query";
+import type { authClient } from "@/lib/auth-client";
 import { orpc } from "@/utils/orpc";
 
 export default function Dashboard({

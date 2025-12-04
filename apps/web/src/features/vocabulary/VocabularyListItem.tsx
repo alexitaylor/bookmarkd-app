@@ -36,18 +36,16 @@ export function VocabularyListItem({
 		<button
 			onClick={onClick}
 			className={cn(
-				"w-full flex items-start gap-3 p-3 text-left transition-colors rounded-md",
+				"flex w-full items-start gap-3 rounded-md p-3 text-left transition-colors",
 				"hover:bg-accent/50",
-				isSelected && "bg-accent border-l-2 border-primary",
-				word.learned && "bg-green-50/50 dark:bg-green-950/20"
+				isSelected && "border-primary border-l-2 bg-accent",
+				word.learned && "bg-green-50/50 dark:bg-green-950/20",
 			)}
 		>
 			<div
 				className={cn(
-					"h-10 w-10 shrink-0 rounded-full flex items-center justify-center",
-					word.learned
-						? "bg-green-100 dark:bg-green-900/30"
-						: "bg-muted"
+					"flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+					word.learned ? "bg-green-100 dark:bg-green-900/30" : "bg-muted",
 				)}
 			>
 				{word.learned ? (
@@ -56,17 +54,17 @@ export function VocabularyListItem({
 					<BookText className="h-5 w-5 text-muted-foreground" />
 				)}
 			</div>
-			<div className="flex-1 min-w-0">
+			<div className="min-w-0 flex-1">
 				<div className="flex items-center gap-2">
-					<span className="font-medium truncate">{word.word}</span>
+					<span className="truncate font-medium">{word.word}</span>
 					{word.learned && (
-						<Badge variant="secondary" className="text-[10px] shrink-0">
+						<Badge variant="secondary" className="shrink-0 text-[10px]">
 							Learned
 						</Badge>
 					)}
 				</div>
 				{truncatedDefinition && (
-					<p className="text-sm text-muted-foreground truncate">
+					<p className="truncate text-muted-foreground text-sm">
 						{truncatedDefinition}
 					</p>
 				)}

@@ -1,15 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookText, Pencil, Trash2, ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, BookText, Check, Pencil, Trash2, X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { client } from "@/utils/orpc";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -21,6 +15,8 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -29,7 +25,11 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { client } from "@/utils/orpc";
 
 interface VocabularyWord {
 	id: number;
@@ -57,7 +57,7 @@ export function VocabularyDetail({
 	const [editDefinition, setEditDefinition] = useState(word.definition || "");
 	const [editContext, setEditContext] = useState(word.contextSentence || "");
 	const [editPageNumber, setEditPageNumber] = useState(
-		word.pageNumber?.toString() || ""
+		word.pageNumber?.toString() || "",
 	);
 	const queryClient = useQueryClient();
 
@@ -121,7 +121,9 @@ export function VocabularyDetail({
 			word: editWord.trim(),
 			definition: editDefinition.trim() || undefined,
 			contextSentence: editContext.trim() || undefined,
-			pageNumber: editPageNumber ? parseInt(editPageNumber, 10) : undefined,
+			pageNumber: editPageNumber
+				? Number.parseInt(editPageNumber, 10)
+				: undefined,
 		});
 	};
 
@@ -129,23 +131,21 @@ export function VocabularyDetail({
 		<div className="h-full overflow-y-auto">
 			{/* Mobile Back Button */}
 			{showBackButton && onBack && (
-				<div className="p-4 border-b md:hidden">
+				<div className="border-b p-4 md:hidden">
 					<Button variant="ghost" size="sm" onClick={onBack}>
-						<ArrowLeft className="h-4 w-4 mr-2" />
+						<ArrowLeft className="mr-2 h-4 w-4" />
 						Back to Vocabulary
 					</Button>
 				</div>
 			)}
 
-			<div className="p-6 space-y-6">
+			<div className="space-y-6 p-6">
 				{/* Header */}
 				<div className="flex items-start gap-4">
 					<div
 						className={cn(
-							"h-16 w-16 shrink-0 rounded-full flex items-center justify-center",
-							word.learned
-								? "bg-green-100 dark:bg-green-900/30"
-								: "bg-muted"
+							"flex h-16 w-16 shrink-0 items-center justify-center rounded-full",
+							word.learned ? "bg-green-100 dark:bg-green-900/30" : "bg-muted",
 						)}
 					>
 						{word.learned ? (
@@ -154,12 +154,12 @@ export function VocabularyDetail({
 							<BookText className="h-8 w-8 text-muted-foreground" />
 						)}
 					</div>
-					<div className="flex-1 min-w-0">
+					<div className="min-w-0 flex-1">
 						<div className="flex items-start justify-between gap-2">
 							<div>
-								<h2 className="text-2xl font-bold">{word.word}</h2>
+								<h2 className="font-bold text-2xl">{word.word}</h2>
 								{word.pageNumber && (
-									<p className="text-sm text-muted-foreground">
+									<p className="text-muted-foreground text-sm">
 										Page {word.pageNumber}
 									</p>
 								)}
@@ -179,7 +179,7 @@ export function VocabularyDetail({
 				{/* Definition */}
 				{word.definition && (
 					<div>
-						<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+						<h3 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
 							Definition
 						</h3>
 						<p className="leading-relaxed">{word.definition}</p>
@@ -189,10 +189,10 @@ export function VocabularyDetail({
 				{/* Context Sentence */}
 				{word.contextSentence && (
 					<div>
-						<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+						<h3 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
 							Context from Book
 						</h3>
-						<p className="italic text-muted-foreground leading-relaxed">
+						<p className="text-muted-foreground italic leading-relaxed">
 							&ldquo;{word.contextSentence}&rdquo;
 						</p>
 					</div>
@@ -206,7 +206,7 @@ export function VocabularyDetail({
 				)}
 
 				{/* Actions */}
-				<div className="flex flex-wrap items-center gap-2 pt-4 border-t">
+				<div className="flex flex-wrap items-center gap-2 border-t pt-4">
 					<Button
 						variant={word.learned ? "outline" : "default"}
 						onClick={() =>
@@ -218,18 +218,18 @@ export function VocabularyDetail({
 					>
 						{word.learned ? (
 							<>
-								<X className="h-4 w-4 mr-2" />
+								<X className="mr-2 h-4 w-4" />
 								Mark Unlearned
 							</>
 						) : (
 							<>
-								<Check className="h-4 w-4 mr-2" />
+								<Check className="mr-2 h-4 w-4" />
 								Mark Learned
 							</>
 						)}
 					</Button>
 					<Button variant="outline" onClick={handleEdit}>
-						<Pencil className="h-4 w-4 mr-2" />
+						<Pencil className="mr-2 h-4 w-4" />
 						Edit
 					</Button>
 					<AlertDialog>
@@ -238,7 +238,7 @@ export function VocabularyDetail({
 								variant="outline"
 								className="text-destructive hover:text-destructive"
 							>
-								<Trash2 className="h-4 w-4 mr-2" />
+								<Trash2 className="mr-2 h-4 w-4" />
 								Delete
 							</Button>
 						</AlertDialogTrigger>
@@ -291,7 +291,9 @@ export function VocabularyDetail({
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="edit-context">Context Sentence (optional)</Label>
+								<Label htmlFor="edit-context">
+									Context Sentence (optional)
+								</Label>
 								<Textarea
 									id="edit-context"
 									value={editContext}
@@ -331,10 +333,10 @@ export function VocabularyDetail({
 
 export function VocabularyDetailEmpty() {
 	return (
-		<div className="h-full flex flex-col items-center justify-center text-center p-6">
-			<BookText className="h-16 w-16 text-muted-foreground mb-4" />
-			<h3 className="text-lg font-semibold">Select a Word</h3>
-			<p className="text-muted-foreground mt-1">
+		<div className="flex h-full flex-col items-center justify-center p-6 text-center">
+			<BookText className="mb-4 h-16 w-16 text-muted-foreground" />
+			<h3 className="font-semibold text-lg">Select a Word</h3>
+			<p className="mt-1 text-muted-foreground">
 				Choose a word from the list to view its details
 			</p>
 		</div>

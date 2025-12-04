@@ -1,13 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
-import { client } from "@/utils/orpc";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Dialog,
 	DialogContent,
@@ -16,6 +12,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "@/utils/orpc";
 
 interface AddNoteDialogProps {
 	bookId: number;
@@ -33,8 +33,11 @@ export function AddNoteDialog({
 	const queryClient = useQueryClient();
 
 	const createMutation = useMutation({
-		mutationFn: (data: { bookId: number; content: string; pageNumber?: number }) =>
-			client.note.create(data),
+		mutationFn: (data: {
+			bookId: number;
+			content: string;
+			pageNumber?: number;
+		}) => client.note.create(data),
 		onSuccess: () => {
 			toast.success("Note added!");
 			queryClient.invalidateQueries({ queryKey: [["note"]] });
@@ -60,7 +63,7 @@ export function AddNoteDialog({
 		createMutation.mutate({
 			bookId,
 			content: content.trim(),
-			pageNumber: pageNumber ? parseInt(pageNumber, 10) : undefined,
+			pageNumber: pageNumber ? Number.parseInt(pageNumber, 10) : undefined,
 		});
 	};
 

@@ -1,18 +1,18 @@
 import { relations } from "drizzle-orm";
 
 // Import all tables
-import { user, session, account, userRole } from "./auth";
-import { book } from "./book";
+import { account, session, user, userRole } from "./auth";
 import { author, bookAuthor } from "./author";
-import { genre, bookGenre } from "./genre";
+import { book } from "./book";
 import { chapter } from "./chapter";
 import { character, characterAlias } from "./character";
-import { userBook } from "./user-book";
-import { note } from "./note";
-import { vocabulary } from "./vocabulary";
-import { review, reviewVote } from "./review";
 import { comment } from "./comment";
+import { bookGenre, genre } from "./genre";
+import { note } from "./note";
 import { reaction } from "./reaction";
+import { review, reviewVote } from "./review";
+import { userBook } from "./user-book";
+import { vocabulary } from "./vocabulary";
 
 // -------------------------
 // AUTH RELATIONS

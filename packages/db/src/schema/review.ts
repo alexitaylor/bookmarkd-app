@@ -1,11 +1,11 @@
 import {
+	index,
+	integer,
 	pgTable,
 	serial,
 	text,
-	integer,
 	timestamp,
 	uniqueIndex,
-	index,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { book } from "./book";

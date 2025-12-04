@@ -143,10 +143,10 @@ export function ReadingGoalProgress({ className }: ReadingGoalProgressProps) {
 						</span>
 					</div>
 					<Progress
-					value={progress}
-					className="mb-2"
-					indicatorClassName="bg-blue-600 dark:bg-blue-500"
-				/>
+						value={progress}
+						className="mb-2"
+						indicatorClassName="bg-blue-600 dark:bg-blue-500"
+					/>
 					<p className="text-muted-foreground text-sm">
 						{booksRemaining === 0
 							? "🎉 Congratulations! You've reached your goal!"

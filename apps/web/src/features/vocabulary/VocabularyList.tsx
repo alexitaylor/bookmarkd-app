@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, Plus, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { VocabularyListItem } from "./VocabularyListItem";
 
 interface VocabularyWord {
@@ -42,33 +42,33 @@ export function VocabularyList({
 		return words.filter(
 			(w) =>
 				w.word.toLowerCase().includes(query) ||
-				w.definition?.toLowerCase().includes(query)
+				w.definition?.toLowerCase().includes(query),
 		);
 	}, [words, searchQuery]);
 
 	return (
-		<div className="flex flex-col h-full min-h-0">
+		<div className="flex h-full min-h-0 flex-col">
 			{/* Header with stats */}
 			<div className="px-3 pt-3 pb-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{learnedCount} of {totalCount} words learned
 				</p>
 			</div>
 
 			{/* Search Input */}
-			<div className="px-3 pb-3 border-b">
+			<div className="border-b px-3 pb-3">
 				<div className="relative">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 					<Input
 						placeholder="Search words..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-9 pr-9"
+						className="pr-9 pl-9"
 					/>
 					{searchQuery && (
 						<button
 							onClick={() => setSearchQuery("")}
-							className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+							className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
 						>
 							<X className="h-4 w-4" />
 						</button>
@@ -77,9 +77,9 @@ export function VocabularyList({
 			</div>
 
 			{/* Word List */}
-			<div className="flex-1 min-h-0 overflow-y-auto p-2">
+			<div className="min-h-0 flex-1 overflow-y-auto p-2">
 				{filteredWords.length === 0 ? (
-					<div className="text-center py-8 text-muted-foreground">
+					<div className="py-8 text-center text-muted-foreground">
 						{searchQuery ? "No words found" : "No words yet"}
 					</div>
 				) : (
@@ -97,9 +97,9 @@ export function VocabularyList({
 			</div>
 
 			{/* Add Word Button */}
-			<div className="p-3 border-t">
+			<div className="border-t p-3">
 				<Button onClick={onAddWord} className="w-full">
-					<Plus className="h-4 w-4 mr-2" />
+					<Plus className="mr-2 h-4 w-4" />
 					Add Word
 				</Button>
 			</div>
