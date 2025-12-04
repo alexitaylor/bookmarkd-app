@@ -8,6 +8,7 @@ import {
 	LayoutDashboard,
 	Library,
 	Menu,
+	Search,
 	Tags,
 	X,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "./mode-toggle";
+import { BookSearch } from "./search/book-search";
 import { Button } from "./ui/button";
 import UserMenu from "./user-menu";
 
@@ -42,6 +44,7 @@ const mobileOnlyLinks: NavLink[] = [
 export default function Header() {
 	const pathname = usePathname();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [searchOpen, setSearchOpen] = useState(false);
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-border border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -82,12 +85,30 @@ export default function Header() {
 
 				{/* Desktop Actions */}
 				<div className="hidden items-center gap-2 md:flex">
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => setSearchOpen(true)}
+						className="text-muted-foreground"
+					>
+						<Search className="h-5 w-5" />
+						<span className="sr-only">Search books</span>
+					</Button>
 					<ModeToggle />
 					<UserMenu />
 				</div>
 
 				{/* Mobile Menu Button */}
 				<div className="flex items-center gap-2 md:hidden">
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => setSearchOpen(true)}
+						className="text-muted-foreground"
+					>
+						<Search className="h-5 w-5" />
+						<span className="sr-only">Search books</span>
+					</Button>
 					<ModeToggle />
 					<Button
 						variant="ghost"
@@ -162,6 +183,9 @@ export default function Header() {
 					</div>
 				</div>
 			)}
+
+			{/* Book Search Modal */}
+			<BookSearch open={searchOpen} onOpenChange={setSearchOpen} />
 		</header>
 	);
 }
