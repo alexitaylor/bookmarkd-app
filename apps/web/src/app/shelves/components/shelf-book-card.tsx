@@ -26,6 +26,7 @@ interface ShelfBook {
 	bookPageCount: number | null;
 	bookAuthors: string | null;
 	bookDatePublished: string | null;
+	bookSynopsis: string | null;
 }
 
 interface ShelfBookCardProps {

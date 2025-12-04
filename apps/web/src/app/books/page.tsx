@@ -6,29 +6,26 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import {
-	ExternalLink,
-	Globe,
-	Grid3X3,
-	List,
-	Loader2,
-	Plus,
-	RotateCcw,
-	Search,
-	X,
-} from "lucide-react";
+import { ExternalLink, Globe, Loader2, Plus, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-	parseAsInteger,
-	parseAsString,
-	parseAsStringLiteral,
-	useQueryState,
-} from "nuqs";
-import { useEffect, useState } from "react";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+	type GridDensity,
+	GridDensitySelector,
+	gridDensityClasses,
+	gridDensityOptions,
+	RatingFilter,
+	type RatingFilterOption,
+	ratingFilterOptions,
+	SearchBar,
+	type ViewMode,
+	ViewModeToggle,
+	viewModeOptions,
+} from "@/components/books";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -49,7 +46,6 @@ import {
 	type SortOption,
 	sortLabels,
 	sortOptions,
-	viewOptions,
 } from "./types";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -78,10 +74,24 @@ export default function BooksPage() {
 	);
 	const [viewMode, setViewMode] = useQueryState(
 		"view",
-		parseAsStringLiteral(viewOptions).withDefault("gallery"),
+		parseAsStringLiteral(viewModeOptions).withDefault("grid"),
 	);
-	const [genreId, setGenreId] = useQueryState("genre", parseAsInteger);
-	const [searchQuery, setSearchQuery] = useQueryState("q", parseAsString);
+	const [gridDensity, setGridDensity] = useQueryState(
+		"density",
+		parseAsStringLiteral(gridDensityOptions).withDefault("comfortable"),
+	);
+	const [genreId, setGenreId] = useQueryState(
+		"genre",
+		parseAsString.withDefault(""),
+	);
+	const [searchQuery, setSearchQuery] = useQueryState(
+		"q",
+		parseAsString.withDefault(""),
+	);
+	const [ratingFilter, setRatingFilter] = useQueryState(
+		"rating",
+		parseAsStringLiteral(ratingFilterOptions).withDefault("all"),
+	);
 
 	// Local state for the input (to debounce)
 	const [inputValue, setInputValue] = useState(searchQuery ?? "");
@@ -108,6 +118,8 @@ export default function BooksPage() {
 	const { data: session } = authClient.useSession();
 	const isLoggedIn = !!session?.user;
 
+	const parsedGenreId = genreId ? Number.parseInt(genreId, 10) : undefined;
+
 	const {
 		data,
 		fetchNextPage,
@@ -116,12 +128,12 @@ export default function BooksPage() {
 		isLoading,
 		isError,
 	} = useInfiniteQuery({
-		queryKey: ["books", sort, genreId, debouncedSearch],
+		queryKey: ["books", sort, parsedGenreId, debouncedSearch],
 		queryFn: async ({ pageParam = 0 }) => {
 			const params = {
 				limit: ITEMS_PER_PAGE,
 				offset: pageParam,
-				genreId: genreId ?? undefined,
+				genreId: parsedGenreId,
 				query: debouncedSearch || undefined,
 			};
 			let result: Awaited<ReturnType<typeof client.book.getRecent>>;
@@ -177,7 +189,20 @@ export default function BooksPage() {
 
 	const allBooks =
 		data?.pages.flatMap((page) => page?.books ?? []).filter(Boolean) ?? [];
-	const bookIds = allBooks.map((book) => book.id);
+
+	// Apply client-side rating filter
+	const filteredBooks = useMemo(() => {
+		if (ratingFilter === "all") return allBooks;
+		if (ratingFilter === "unrated") {
+			return allBooks.filter(
+				(book) => !book.avgRating || Number(book.avgRating) === 0,
+			);
+		}
+		const minRating = Number.parseInt(ratingFilter, 10);
+		return allBooks.filter((book) => Number(book.avgRating) >= minRating);
+	}, [allBooks, ratingFilter]);
+
+	const bookIds = filteredBooks.map((book) => book.id);
 
 	// Fetch user's reading statuses for displayed books (only if logged in)
 	const shouldFetchStatuses = isLoggedIn && bookIds.length > 0;
@@ -216,17 +241,14 @@ export default function BooksPage() {
 		return isbn ? (addedBooks.get(isbn) ?? null) : null;
 	};
 
-	const handleClearSearch = () => {
-		setInputValue("");
-		setSearchQuery(null);
-	};
-
 	const handleResetFilters = () => {
 		setInputValue("");
 		setSearchQuery(null);
 		setGenreId(null);
 		setSort("title");
-		setViewMode("gallery");
+		setViewMode("grid");
+		setGridDensity("comfortable");
+		setRatingFilter("all");
 		setShowExternalResults(false);
 		setAddedBooks(new Map());
 	};
@@ -234,111 +256,108 @@ export default function BooksPage() {
 	// Check if any filters are active (different from defaults)
 	const hasActiveFilters =
 		inputValue !== "" ||
-		genreId !== null ||
+		genreId !== "" ||
 		sort !== "title" ||
-		viewMode !== "gallery";
+		viewMode !== "grid" ||
+		gridDensity !== "comfortable" ||
+		ratingFilter !== "all";
 
 	return (
 		<div className="container mx-auto max-w-7xl px-4 py-8">
 			{/* Header */}
-			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div>
-					<h1 className="font-bold text-3xl">Books</h1>
-					<p className="mt-1 text-muted-foreground">
-						Browse and discover books from the community
-					</p>
-				</div>
+			<div className="mb-6">
+				<h1 className="font-bold text-3xl">Books</h1>
+				<p className="mt-1 text-muted-foreground">
+					Browse and discover books from the community
+				</p>
+			</div>
 
-				{/* Controls */}
-				<div className="flex flex-wrap items-center gap-2">
-					{/* View Toggle */}
-					<div className="flex rounded-md border">
-						<Button
-							variant="ghost"
-							size="sm"
-							className={cn(
-								"rounded-r-none px-3",
-								viewMode === "gallery" && "bg-muted",
-							)}
-							onClick={() => setViewMode("gallery")}
-							aria-label="Gallery view"
-						>
-							<Grid3X3 className="h-4 w-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="sm"
-							className={cn(
-								"rounded-l-none px-3",
-								viewMode === "list" && "bg-muted",
-							)}
-							onClick={() => setViewMode("list")}
-							aria-label="List view"
-						>
-							<List className="h-4 w-4" />
-						</Button>
-					</div>
+			{/* Search Input */}
+			<div className="mb-4">
+				<SearchBar
+					value={inputValue}
+					onChange={setInputValue}
+					placeholder="Search books by title..."
+				/>
+			</div>
 
-					{/* Genre Filter */}
-					<GenreCombobox value={genreId} onChange={setGenreId} />
+			{/* Filters Row */}
+			<div className="mb-6 flex flex-wrap items-center gap-2">
+				{/* Sort Dropdown */}
+				<Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
+					<SelectTrigger className="w-[180px]">
+						<SelectValue placeholder="Sort by" />
+					</SelectTrigger>
+					<SelectContent>
+						{sortOptions.map((option) => (
+							<SelectItem key={option} value={option}>
+								{sortLabels[option]}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 
-					{/* Sort Dropdown */}
-					<Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
-						<SelectTrigger className="w-[180px]">
-							<SelectValue placeholder="Sort by" />
-						</SelectTrigger>
-						<SelectContent>
-							{sortOptions.map((option) => (
-								<SelectItem key={option} value={option}>
-									{sortLabels[option]}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+				{/* Genre Filter */}
+				<GenreCombobox
+					value={parsedGenreId ?? null}
+					onChange={(id) => setGenreId(id?.toString() ?? null)}
+				/>
 
-					{/* Reset Filters Button */}
-					{hasActiveFilters && (
+				{/* Rating Filter */}
+				<RatingFilter
+					value={ratingFilter}
+					onChange={(v) => setRatingFilter(v as RatingFilterOption)}
+				/>
+
+				{/* Divider */}
+				<div className="hidden h-10 w-px bg-border sm:block" />
+
+				{/* Grid Density (only in grid view) */}
+				{viewMode === "grid" && (
+					<GridDensitySelector
+						value={gridDensity}
+						onChange={(v) => setGridDensity(v as GridDensity)}
+					/>
+				)}
+
+				{/* View Toggle */}
+				<ViewModeToggle
+					value={viewMode}
+					onChange={(v) => setViewMode(v as ViewMode)}
+				/>
+
+				{/* Reset Filters Button */}
+				{hasActiveFilters && (
+					<>
+						<div className="hidden h-10 w-px bg-border sm:block" />
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={handleResetFilters}
-							className="text-muted-foreground"
+							className="h-10 text-muted-foreground"
 						>
 							<RotateCcw className="mr-1 h-4 w-4" />
 							Reset
 						</Button>
-					)}
-				</div>
-			</div>
-
-			{/* Search Input */}
-			<div className="relative mb-6">
-				<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-				<Input
-					type="search"
-					placeholder="Search books by title..."
-					value={inputValue}
-					onChange={(e) => setInputValue(e.target.value)}
-					className="pr-10 pl-10"
-				/>
-				{inputValue && (
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8"
-						onClick={handleClearSearch}
-					>
-						<X className="h-4 w-4" />
-						<span className="sr-only">Clear search</span>
-					</Button>
+					</>
 				)}
 			</div>
 
+			{/* Results count when filtering */}
+			{(ratingFilter !== "all" || debouncedSearch || parsedGenreId) && (
+				<p className="mb-4 text-muted-foreground text-sm">
+					Showing {filteredBooks.length} books
+					{ratingFilter !== "all" && ratingFilter !== "unrated" && (
+						<span> with {ratingFilter}+ stars</span>
+					)}
+					{ratingFilter === "unrated" && <span> without ratings</span>}
+				</p>
+			)}
+
 			{/* Loading State */}
 			{isLoading &&
-				(viewMode === "gallery" ? (
-					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+				(viewMode === "grid" ? (
+					<div className={cn("grid", gridDensityClasses[gridDensity])}>
 						{Array.from({ length: 10 }).map((_, i) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: only have index for key
 							<BookCardSkeleton key={i} />
@@ -365,21 +384,23 @@ export default function BooksPage() {
 			{/* Books Display */}
 			{!isLoading &&
 				!isError &&
-				(allBooks.length === 0 ? (
+				(filteredBooks.length === 0 ? (
 					<div className="py-12 text-center">
 						<p className="text-muted-foreground">
 							{debouncedSearch
 								? `No books found for "${debouncedSearch}".`
-								: genreId
+								: parsedGenreId
 									? "No books found in this genre. Try selecting a different genre."
-									: "No books found. Start adding books to see them here!"}
+									: ratingFilter !== "all"
+										? "No books match your rating filter."
+										: "No books found. Start adding books to see them here!"}
 						</p>
 					</div>
 				) : (
 					<>
-						{viewMode === "gallery" ? (
-							<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-								{allBooks.map((book) => (
+						{viewMode === "grid" ? (
+							<div className={cn("grid", gridDensityClasses[gridDensity])}>
+								{filteredBooks.map((book) => (
 									<BookCard
 										key={book.id}
 										id={book.id}
@@ -400,7 +421,7 @@ export default function BooksPage() {
 							</div>
 						) : (
 							<div className="flex flex-col gap-3">
-								{allBooks.map((book) => (
+								{filteredBooks.map((book) => (
 									<BookListItem
 										key={book.id}
 										id={book.id}

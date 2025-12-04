@@ -4,12 +4,16 @@ import {
 	CheckSquare,
 	FileJson,
 	FileSpreadsheet,
-	LayoutGrid,
-	List,
 	RotateCcw,
 	Star,
 	XCircle,
 } from "lucide-react";
+import {
+	type GridDensity,
+	GridDensitySelector,
+	type ViewMode,
+	ViewModeToggle,
+} from "@/components/books";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -18,10 +22,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { ShareShelfDialog } from "./share-shelf-dialog";
 import type {
-	GridDensity,
 	RatingOption,
 	ShelfBook,
 	ShelfType,
@@ -40,8 +42,8 @@ interface ShelfFiltersProps {
 	onYearFilterChange: (value: string) => void;
 	availableYears: number[];
 	// View mode
-	viewMode: "grid" | "list";
-	onViewModeChange: (value: "grid" | "list") => void;
+	viewMode: ViewMode;
+	onViewModeChange: (value: ViewMode) => void;
 	// Grid density
 	gridDensity: GridDensity;
 	onGridDensityChange: (value: GridDensity) => void;
@@ -153,47 +155,14 @@ export function ShelfFilters({
 
 			{/* Grid Density (only in grid view) */}
 			{viewMode === "grid" && (
-				<Select value={gridDensity} onValueChange={onGridDensityChange}>
-					<SelectTrigger className="w-[140px]">
-						<SelectValue placeholder="Density" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="compact">Compact</SelectItem>
-						<SelectItem value="comfortable">Comfortable</SelectItem>
-						<SelectItem value="spacious">Spacious</SelectItem>
-					</SelectContent>
-				</Select>
+				<GridDensitySelector
+					value={gridDensity}
+					onChange={onGridDensityChange}
+				/>
 			)}
 
 			{/* View Toggle */}
-			<div className="flex rounded-md border">
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={() => onViewModeChange("grid")}
-					className={cn(
-						"h-9 rounded-r-none border-r px-3",
-						viewMode === "grid"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground",
-					)}
-				>
-					<LayoutGrid className="h-4 w-4" />
-				</Button>
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={() => onViewModeChange("list")}
-					className={cn(
-						"h-9 rounded-l-none px-3",
-						viewMode === "list"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground",
-					)}
-				>
-					<List className="h-4 w-4" />
-				</Button>
-			</div>
+			<ViewModeToggle value={viewMode} onChange={onViewModeChange} />
 
 			{/* Divider */}
 			<div className="hidden h-10 w-px bg-border sm:block" />

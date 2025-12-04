@@ -73,7 +73,7 @@ export function QuickNotePopover({
 			<PopoverContent
 				className="w-80"
 				onClick={(e) => e.stopPropagation()}
-				align="end"
+				align="center"
 			>
 				<form onSubmit={handleSubmit} className="space-y-3">
 					<div className="space-y-2">

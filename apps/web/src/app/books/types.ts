@@ -1,5 +1,11 @@
+// Re-export shared types
+export type {
+	GridDensity,
+	RatingFilterOption,
+	ViewMode,
+} from "@/components/books";
+
 export type SortOption = "title" | "popular" | "recent" | "rating";
-export type ViewMode = "gallery" | "list";
 export type BookStatus =
 	| "WantToRead"
 	| "CurrentlyReading"
@@ -27,7 +33,6 @@ export interface BookItemProps {
 export const ITEMS_PER_PAGE = 20;
 
 export const sortOptions = ["title", "popular", "recent", "rating"] as const;
-export const viewOptions = ["gallery", "list"] as const;
 
 export const sortLabels: Record<SortOption, string> = {
 	title: "A-Z (Title)",

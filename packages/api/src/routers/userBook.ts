@@ -76,6 +76,7 @@ export const userBookRouter = {
 					bookCoverUrl: book.coverUrl,
 					bookPageCount: book.pageCount,
 					bookDatePublished: book.datePublished,
+					bookSynopsis: book.synopsis,
 				})
 				.from(userBook)
 				.innerJoin(book, eq(book.id, userBook.bookId))
@@ -136,6 +137,7 @@ export const userBookRouter = {
 				bookCoverUrl: book.coverUrl,
 				bookPageCount: book.pageCount,
 				bookDatePublished: book.datePublished,
+				bookSynopsis: book.synopsis,
 			})
 			.from(userBook)
 			.innerJoin(book, eq(book.id, userBook.bookId))

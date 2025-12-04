@@ -1,4 +1,9 @@
-export type GridDensity = "compact" | "comfortable" | "spacious";
+// Re-export shared types
+export type {
+	GridDensity,
+	RatingFilterOption as RatingOption,
+	ViewMode,
+} from "@/components/books";
 
 export type ShelfType = "want" | "current" | "read" | "dnf";
 
@@ -11,10 +16,6 @@ export type SortOption =
 	| "pagesDesc"
 	| "pagesAsc"
 	| "progress";
-
-export type RatingOption = "all" | "5" | "4" | "3" | "2" | "1" | "unrated";
-
-export type ViewMode = "grid" | "list";
 
 export interface ShelfBook {
 	id: number;
@@ -29,4 +30,5 @@ export interface ShelfBook {
 	bookPageCount: number | null;
 	bookAuthors: string | null;
 	bookDatePublished: string | null;
+	bookSynopsis: string | null;
 }

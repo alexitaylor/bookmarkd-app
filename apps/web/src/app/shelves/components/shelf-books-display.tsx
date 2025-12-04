@@ -1,5 +1,6 @@
 "use client";
 
+import { gridDensityClasses } from "@/components/books";
 import { cn } from "@/lib/utils";
 import { ShelfBookCard } from "./shelf-book-card";
 import { ShelfBookListItem } from "./shelf-book-list-item";
@@ -9,14 +10,6 @@ import type {
 	ShelfType,
 	ViewMode,
 } from "./shelf-types";
-
-// Grid density classes
-const gridDensityClasses: Record<GridDensity, string> = {
-	compact:
-		"grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7",
-	comfortable: "grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
-	spacious: "grid-cols-2 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
-};
 
 interface ShelfBooksDisplayProps {
 	books: ShelfBook[];

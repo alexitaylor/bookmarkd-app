@@ -3,21 +3,22 @@
 import { BookmarkPlus, BookOpen, CheckCircle2, XCircle } from "lucide-react";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useMemo, useState } from "react";
+import {
+	type GridDensity,
+	gridDensityOptions,
+	type RatingFilterOption,
+	ratingFilterOptions,
+	SearchBar,
+	type ViewMode,
+	viewModeOptions,
+} from "@/components/books";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookRecommendations } from "./book-recommendations";
 import { ShelfBooksDisplay } from "./shelf-books-display";
 import { ShelfBulkActions } from "./shelf-bulk-actions";
 import { ShelfFilters } from "./shelf-filters";
-import { ShelfSearchBar } from "./shelf-search-bar";
-import type {
-	GridDensity,
-	RatingOption,
-	ShelfBook,
-	ShelfType,
-	SortOption,
-	ViewMode,
-} from "./shelf-types";
+import type { ShelfBook, ShelfType, SortOption } from "./shelf-types";
 import { exportToCSV, exportToJSON, getYearOptions } from "./shelf-utils";
 
 const shelfConfig = {
@@ -58,15 +59,6 @@ const sortOptions = [
 	"progress",
 ] as const;
 
-// Rating filter options for nuqs
-const ratingOptions = ["all", "5", "4", "3", "2", "1", "unrated"] as const;
-
-// View mode options for nuqs
-const viewModeOptions = ["grid", "list"] as const;
-
-// Grid density options for nuqs
-const gridDensityOptions = ["compact", "comfortable", "spacious"] as const;
-
 interface ShelfGridProps {
 	books: ShelfBook[];
 	isLoading: boolean;
@@ -85,7 +77,7 @@ export function ShelfGrid({ books, isLoading, shelfType }: ShelfGridProps) {
 	);
 	const [ratingFilter, setRatingFilter] = useQueryState(
 		"rating",
-		parseAsStringLiteral(ratingOptions).withDefault("all"),
+		parseAsStringLiteral(ratingFilterOptions).withDefault("all"),
 	);
 	const [yearFilter, setYearFilter] = useQueryState(
 		"year",
@@ -248,12 +240,16 @@ export function ShelfGrid({ books, isLoading, shelfType }: ShelfGridProps) {
 
 	const resetFilters = () => {
 		setSearchQuery("");
+		setSortBy("dateAdded");
 		setRatingFilter("all");
 		setYearFilter("all");
 	};
 
 	const hasActiveFilters =
-		searchQuery.trim() !== "" || ratingFilter !== "all" || yearFilter !== "all";
+		searchQuery.trim() !== "" ||
+		sortBy !== "dateAdded" ||
+		ratingFilter !== "all" ||
+		yearFilter !== "all";
 
 	if (isLoading) {
 		return (
@@ -312,14 +308,16 @@ export function ShelfGrid({ books, isLoading, shelfType }: ShelfGridProps) {
 			)}
 
 			{/* Search Row */}
-			<ShelfSearchBar value={searchQuery} onChange={setSearchQuery} />
+			<SearchBar value={searchQuery} onChange={setSearchQuery} />
 
 			{/* Filters and Sort Row */}
 			<ShelfFilters
 				sortBy={sortBy}
 				onSortChange={(value) => setSortBy(value as SortOption)}
 				ratingFilter={ratingFilter}
-				onRatingFilterChange={(value) => setRatingFilter(value as RatingOption)}
+				onRatingFilterChange={(value) =>
+					setRatingFilter(value as RatingFilterOption)
+				}
 				yearFilter={yearFilter}
 				onYearFilterChange={setYearFilter}
 				availableYears={availableYears}
