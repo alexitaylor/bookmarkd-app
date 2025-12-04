@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { BookStatusDropdown } from "@/components/book-status-dropdown";
+import { HtmlContent } from "@/components/ui/html-content";
 import { ReadingProgressBar } from "@/components/ui/reading-progress-bar";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
@@ -175,9 +176,11 @@ export function ShelfBookListItem({
 
 					{/* Synopsis */}
 					{book.bookSynopsis && (
-						<p className="mt-2 line-clamp-2 text-muted-foreground text-sm">
-							{book.bookSynopsis}
-						</p>
+						<HtmlContent
+							content={book.bookSynopsis}
+							lineClamp={2}
+							className="mt-2 text-muted-foreground text-sm"
+						/>
 					)}
 
 					{/* Your Rating row */}

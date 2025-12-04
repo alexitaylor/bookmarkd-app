@@ -41,15 +41,23 @@ async function searchLocalBooks(
 	{
 		id: number;
 		title: string;
+		titleLong: string | null;
 		subtitle: string | null;
 		isbn: string | null;
 		isbn13: string | null;
 		synopsis: string | null;
+		overview: string | null;
+		excerpt: string | null;
 		coverUrl: string | null;
+		imageOriginal: string | null;
 		publisher: string | null;
 		pageCount: number | null;
 		language: string | null;
 		datePublished: string | null;
+		binding: string | null;
+		edition: string | null;
+		msrp: string | null;
+		dimensions: string | null;
 		createdAt: Date;
 		updatedAt: Date;
 		authors: { id: number; name: string }[];
@@ -69,22 +77,8 @@ async function searchLocalBooks(
 		.limit(limit);
 
 	// Step 2: Find books by author name (ILIKE + normalized for dots)
-	const booksByAuthor = await db
-		.select({
-			id: book.id,
-			title: book.title,
-			subtitle: book.subtitle,
-			isbn: book.isbn,
-			isbn13: book.isbn13,
-			synopsis: book.synopsis,
-			coverUrl: book.coverUrl,
-			publisher: book.publisher,
-			pageCount: book.pageCount,
-			language: book.language,
-			datePublished: book.datePublished,
-			createdAt: book.createdAt,
-			updatedAt: book.updatedAt,
-		})
+	const booksByAuthorResults = await db
+		.select({ book })
 		.from(book)
 		.innerJoin(bookAuthor, eq(bookAuthor.bookId, book.id))
 		.innerJoin(author, eq(author.id, bookAuthor.authorId))
@@ -93,21 +87,31 @@ async function searchLocalBooks(
 		)
 		.limit(limit);
 
+	const booksByAuthor = booksByAuthorResults.map((r) => r.book);
+
 	// Step 3: If we have few results, try fuzzy matching with pg_trgm
 	let fuzzyBooks: typeof booksByTitle = [];
 	if (booksByTitle.length + booksByAuthor.length < limit) {
 		const fuzzyResults = await db.execute<{
 			id: number;
 			title: string;
+			title_long: string | null;
 			subtitle: string | null;
 			isbn: string | null;
 			isbn13: string | null;
 			synopsis: string | null;
+			overview: string | null;
+			excerpt: string | null;
 			cover_url: string | null;
+			image_original: string | null;
 			publisher: string | null;
 			page_count: number | null;
 			language: string | null;
 			date_published: string | null;
+			binding: string | null;
+			edition: string | null;
+			msrp: string | null;
+			dimensions: string | null;
 			created_at: Date;
 			updated_at: Date;
 			similarity_score: number;
@@ -115,15 +119,23 @@ async function searchLocalBooks(
 			SELECT DISTINCT
 				b.id,
 				b.title,
+				b.title_long,
 				b.subtitle,
 				b.isbn,
 				b.isbn13,
 				b.synopsis,
+				b.overview,
+				b.excerpt,
 				b.cover_url,
+				b.image_original,
 				b.publisher,
 				b.page_count,
 				b.language,
 				b.date_published,
+				b.binding,
+				b.edition,
+				b.msrp,
+				b.dimensions,
 				b.created_at,
 				b.updated_at,
 				GREATEST(
@@ -156,15 +168,23 @@ async function searchLocalBooks(
 		fuzzyBooks = fuzzyResults.rows.map((r) => ({
 			id: r.id,
 			title: r.title,
+			titleLong: r.title_long,
 			subtitle: r.subtitle,
 			isbn: r.isbn,
 			isbn13: r.isbn13,
 			synopsis: r.synopsis,
+			overview: r.overview,
+			excerpt: r.excerpt,
 			coverUrl: r.cover_url,
+			imageOriginal: r.image_original,
 			publisher: r.publisher,
 			pageCount: r.page_count,
 			language: r.language,
 			datePublished: r.date_published,
+			binding: r.binding,
+			edition: r.edition,
+			msrp: r.msrp,
+			dimensions: r.dimensions,
 			createdAt: r.created_at,
 			updatedAt: r.updated_at,
 		}));
@@ -208,15 +228,23 @@ async function searchLocalBooks(
 	return uniqueBooks.map((b) => ({
 		id: b.id,
 		title: b.title,
+		titleLong: b.titleLong,
 		subtitle: b.subtitle,
 		isbn: b.isbn,
 		isbn13: b.isbn13,
 		synopsis: b.synopsis,
+		overview: b.overview,
+		excerpt: b.excerpt,
 		coverUrl: b.coverUrl,
+		imageOriginal: b.imageOriginal,
 		publisher: b.publisher,
 		pageCount: b.pageCount,
 		language: b.language,
 		datePublished: b.datePublished,
+		binding: b.binding,
+		edition: b.edition,
+		msrp: b.msrp,
+		dimensions: b.dimensions,
 		createdAt: b.createdAt,
 		updatedAt: b.updatedAt,
 		authors: authorsByBook.get(b.id) || [],
@@ -565,21 +593,7 @@ export const bookRouter = {
 			// Books by the same author
 			if (authorIds.length > 0) {
 				const sameAuthorBooks = await db
-					.select({
-						id: book.id,
-						title: book.title,
-						subtitle: book.subtitle,
-						isbn: book.isbn,
-						isbn13: book.isbn13,
-						synopsis: book.synopsis,
-						coverUrl: book.coverUrl,
-						publisher: book.publisher,
-						pageCount: book.pageCount,
-						language: book.language,
-						datePublished: book.datePublished,
-						createdAt: book.createdAt,
-						updatedAt: book.updatedAt,
-					})
+					.select()
 					.from(book)
 					.innerJoin(bookAuthor, eq(bookAuthor.bookId, book.id))
 					.where(
@@ -590,28 +604,14 @@ export const bookRouter = {
 					)
 					.limit(input.limit);
 
-				relatedBooks = sameAuthorBooks;
+				relatedBooks = sameAuthorBooks.map((r) => r.book);
 			}
 
 			// If not enough books, add books from the same genre
 			if (relatedBooks.length < input.limit && genreIds.length > 0) {
 				const existingIds = relatedBooks.map((b) => b.id);
 				const sameGenreBooks = await db
-					.select({
-						id: book.id,
-						title: book.title,
-						subtitle: book.subtitle,
-						isbn: book.isbn,
-						isbn13: book.isbn13,
-						synopsis: book.synopsis,
-						coverUrl: book.coverUrl,
-						publisher: book.publisher,
-						pageCount: book.pageCount,
-						language: book.language,
-						datePublished: book.datePublished,
-						createdAt: book.createdAt,
-						updatedAt: book.updatedAt,
-					})
+					.select()
 					.from(book)
 					.innerJoin(bookGenre, eq(bookGenre.bookId, book.id))
 					.where(
@@ -628,7 +628,7 @@ export const bookRouter = {
 					)
 					.limit(input.limit - relatedBooks.length);
 
-				relatedBooks = [...relatedBooks, ...sameGenreBooks];
+				relatedBooks = [...relatedBooks, ...sameGenreBooks.map((r) => r.book)];
 			}
 
 			// Deduplicate

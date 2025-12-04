@@ -1,6 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "./button";
 
@@ -10,7 +11,7 @@ interface EmptyStateProps {
 	description: string;
 	action?: {
 		label: string;
-		href?: string;
+		href?: Route;
 		onClick?: () => void;
 	};
 }

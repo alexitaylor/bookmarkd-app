@@ -6,8 +6,10 @@ import { bookGenre, genre } from "../schema/genre";
 const bookData = [
 	{
 		title: "The Fellowship of the Ring",
+		titleLong: "The Fellowship of the Ring: The Lord of the Rings, Part 1",
 		subtitle: "The Lord of the Rings, Part 1",
-		isbn: "9780547928210",
+		isbn: "0547928211",
+		isbn13: "9780547928210",
 		synopsis:
 			"In ancient times the Rings of Power were crafted by the Elven-smiths, and Sauron, the Dark Lord, forged the One Ring, filling it with his own power so that he could rule all others. But the One Ring was taken from him, and though he sought it throughout Middle-earth, it remained lost to him. After many ages it fell by chance into the hands of the hobbit Bilbo Baggins.",
 		coverUrl: "https://covers.openlibrary.org/b/isbn/9780547928210-L.jpg",
@@ -15,13 +17,18 @@ const bookData = [
 		pageCount: 423,
 		language: "English",
 		datePublished: "1954-07-29",
+		binding: "Paperback",
+		edition: "50th Anniversary Edition",
+		msrp: "18.99",
 		authors: ["J.R.R. Tolkien"],
 		genres: ["Fantasy", "Epic Fantasy"],
 	},
 	{
 		title: "The Two Towers",
+		titleLong: "The Two Towers: The Lord of the Rings, Part 2",
 		subtitle: "The Lord of the Rings, Part 2",
-		isbn: "9780547928203",
+		isbn: "0547928203",
+		isbn13: "9780547928203",
 		synopsis:
 			"Frodo and his Companions of the Ring have been beset by danger during their quest to prevent the Ruling Ring from falling into the hands of the Dark Lord by destroying it in the Cracks of Doom.",
 		coverUrl: "https://covers.openlibrary.org/b/isbn/9780547928203-L.jpg",
@@ -29,13 +36,18 @@ const bookData = [
 		pageCount: 352,
 		language: "English",
 		datePublished: "1954-11-11",
+		binding: "Paperback",
+		edition: "50th Anniversary Edition",
+		msrp: "18.99",
 		authors: ["J.R.R. Tolkien"],
 		genres: ["Fantasy", "Epic Fantasy"],
 	},
 	{
 		title: "A Game of Thrones",
+		titleLong: "A Game of Thrones: A Song of Ice and Fire, Book 1",
 		subtitle: "A Song of Ice and Fire, Book 1",
-		isbn: "9780553593716",
+		isbn: "0553593714",
+		isbn13: "9780553593716",
 		synopsis:
 			"Long ago, in a time forgotten, a preternatural event threw the seasons out of balance. In a land where summers can last decades and winters a lifetime, trouble is brewing. The cold is returning, and in the frozen wastes to the north of Winterfell, sinister forces are massing beyond the kingdom's protective Wall.",
 		coverUrl: "https://covers.openlibrary.org/b/isbn/9780553593716-L.jpg",
@@ -43,6 +55,9 @@ const bookData = [
 		pageCount: 835,
 		language: "English",
 		datePublished: "1996-08-01",
+		binding: "Mass Market Paperback",
+		edition: "1",
+		msrp: "9.99",
 		authors: ["George R.R. Martin"],
 		genres: ["Fantasy", "Epic Fantasy"],
 	},
@@ -160,14 +175,19 @@ export async function seedBooks(db: NodePgDatabase) {
 			.insert(book)
 			.values({
 				title: b.title,
+				titleLong: "titleLong" in b ? b.titleLong : undefined,
 				subtitle: b.subtitle,
 				isbn: b.isbn,
+				isbn13: "isbn13" in b ? b.isbn13 : undefined,
 				synopsis: b.synopsis,
 				coverUrl: b.coverUrl,
 				publisher: b.publisher,
 				pageCount: b.pageCount,
 				language: b.language,
 				datePublished: b.datePublished,
+				binding: "binding" in b ? b.binding : undefined,
+				edition: "edition" in b ? b.edition : undefined,
+				msrp: "msrp" in b ? b.msrp : undefined,
 			})
 			.returning();
 

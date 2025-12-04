@@ -33,13 +33,20 @@ interface Book {
 	title: string;
 	subtitle?: string | null;
 	synopsis?: string | null;
+	overview?: string | null;
+	excerpt?: string | null;
 	coverUrl?: string | null;
+	imageOriginal?: string | null;
 	pageCount?: number | null;
 	publisher?: string | null;
 	language?: string | null;
 	datePublished?: string | null;
 	isbn?: string | null;
 	isbn13?: string | null;
+	binding?: string | null;
+	edition?: string | null;
+	msrp?: string | null;
+	dimensions?: string | null;
 	authors: Author[];
 	genres: Genre[];
 }

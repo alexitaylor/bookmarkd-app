@@ -1,8 +1,8 @@
 "use client";
 
+import { BookOpen, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Author {
@@ -21,12 +21,17 @@ interface Book {
 	subtitle?: string | null;
 	synopsis?: string | null;
 	coverUrl?: string | null;
+	imageOriginal?: string | null;
 	pageCount?: number | null;
 	publisher?: string | null;
 	language?: string | null;
 	datePublished?: string | null;
 	isbn?: string | null;
 	isbn13?: string | null;
+	binding?: string | null;
+	edition?: string | null;
+	msrp?: string | null;
+	dimensions?: string | null;
 	authors: Author[];
 	genres: Genre[];
 }
@@ -41,11 +46,11 @@ export function BookHeader({ book, avgRating, reviewCount }: BookHeaderProps) {
 	return (
 		<div className="flex flex-col gap-6 md:flex-row md:gap-8">
 			{/* Cover Image */}
-			<div className="shrink-0 mx-auto md:mx-0">
-				<div className="relative aspect-[2/3] w-48 md:w-56 overflow-hidden rounded-lg bg-muted shadow-lg">
-					{book.coverUrl ? (
+			<div className="mx-auto shrink-0 md:mx-0">
+				<div className="relative aspect-[2/3] w-48 overflow-hidden rounded-lg bg-muted shadow-lg md:w-56">
+					{book.imageOriginal || book.coverUrl ? (
 						<Image
-							src={book.coverUrl}
+							src={book.imageOriginal || book.coverUrl || ""}
 							alt={book.title}
 							fill
 							className="object-cover"
@@ -64,7 +69,7 @@ export function BookHeader({ book, avgRating, reviewCount }: BookHeaderProps) {
 			<div className="flex-1 space-y-4 text-center md:text-left">
 				{/* Title & Subtitle */}
 				<div>
-					<h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">
+					<h1 className="font-bold text-2xl md:text-3xl lg:text-4xl">
 						{book.title}
 					</h1>
 					{book.subtitle && (
@@ -80,9 +85,7 @@ export function BookHeader({ book, avgRating, reviewCount }: BookHeaderProps) {
 						<span className="text-muted-foreground">by</span>
 						{book.authors.map((author, index) => (
 							<span key={author.id}>
-								<span className="text-primary">
-									{author.name}
-								</span>
+								<span className="text-primary">{author.name}</span>
 								{index < book.authors.length - 1 && ", "}
 							</span>
 						))}
@@ -98,7 +101,8 @@ export function BookHeader({ book, avgRating, reviewCount }: BookHeaderProps) {
 						</div>
 						{reviewCount !== undefined && reviewCount > 0 && (
 							<span className="text-muted-foreground">
-								({reviewCount.toLocaleString()} {reviewCount === 1 ? "review" : "reviews"})
+								({reviewCount.toLocaleString()}{" "}
+								{reviewCount === 1 ? "review" : "reviews"})
 							</span>
 						)}
 					</div>
@@ -106,10 +110,13 @@ export function BookHeader({ book, avgRating, reviewCount }: BookHeaderProps) {
 
 				{/* Genres */}
 				{book.genres.length > 0 && (
-					<div className="flex flex-wrap gap-2 justify-center md:justify-start">
+					<div className="flex flex-wrap justify-center gap-2 md:justify-start">
 						{book.genres.map((genre) => (
 							<Link key={genre.id} href={`/books?genre=${genre.id}`}>
-								<Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
+								<Badge
+									variant="secondary"
+									className="cursor-pointer hover:bg-secondary/80"
+								>
 									{genre.name}
 								</Badge>
 							</Link>
@@ -117,30 +124,71 @@ export function BookHeader({ book, avgRating, reviewCount }: BookHeaderProps) {
 					</div>
 				)}
 
-				{/* Metadata */}
-				<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground md:justify-start">
-					{book.pageCount && (
-						<span>{book.pageCount} pages</span>
-					)}
-					{book.publisher && (
-						<span>{book.publisher}</span>
-					)}
-					{book.datePublished && (
-						<span>Published {book.datePublished}</span>
-					)}
-					{book.language && (
-						<span className="uppercase">{book.language}</span>
-					)}
-				</div>
-
-				{/* ISBN */}
-				{(book.isbn || book.isbn13) && (
-					<div className="text-xs text-muted-foreground">
-						{book.isbn13 && <span>ISBN-13: {book.isbn13}</span>}
-						{book.isbn13 && book.isbn && " | "}
-						{book.isbn && <span>ISBN: {book.isbn}</span>}
+				{/* Book Details */}
+				<div className="rounded-lg border bg-muted/30 p-4">
+					<div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3">
+						{book.binding && (
+							<div>
+								<span className="text-muted-foreground">Format</span>
+								<p className="font-medium">{book.binding}</p>
+							</div>
+						)}
+						{book.pageCount && (
+							<div>
+								<span className="text-muted-foreground">Pages</span>
+								<p className="font-medium">{book.pageCount}</p>
+							</div>
+						)}
+						{book.publisher && (
+							<div>
+								<span className="text-muted-foreground">Publisher</span>
+								<p className="font-medium">{book.publisher}</p>
+							</div>
+						)}
+						{book.datePublished && (
+							<div>
+								<span className="text-muted-foreground">Published</span>
+								<p className="font-medium">{book.datePublished}</p>
+							</div>
+						)}
+						{book.edition && (
+							<div>
+								<span className="text-muted-foreground">Edition</span>
+								<p className="font-medium">{book.edition}</p>
+							</div>
+						)}
+						{book.language && (
+							<div>
+								<span className="text-muted-foreground">Language</span>
+								<p className="font-medium uppercase">{book.language}</p>
+							</div>
+						)}
+						{book.dimensions && (
+							<div>
+								<span className="text-muted-foreground">Dimensions</span>
+								<p className="font-medium">{book.dimensions}</p>
+							</div>
+						)}
+						{book.msrp && (
+							<div>
+								<span className="text-muted-foreground">MSRP</span>
+								<p className="font-medium">${book.msrp}</p>
+							</div>
+						)}
+						{book.isbn13 && (
+							<div>
+								<span className="text-muted-foreground">ISBN-13</span>
+								<p className="font-medium">{book.isbn13}</p>
+							</div>
+						)}
+						{book.isbn && (
+							<div>
+								<span className="text-muted-foreground">ISBN</span>
+								<p className="font-medium">{book.isbn}</p>
+							</div>
+						)}
 					</div>
-				)}
+				</div>
 			</div>
 		</div>
 	);

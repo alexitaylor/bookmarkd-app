@@ -22,6 +22,8 @@ interface Book {
 	title: string;
 	subtitle?: string | null;
 	synopsis?: string | null;
+	overview?: string | null;
+	excerpt?: string | null;
 	coverUrl?: string | null;
 	pageCount?: number | null;
 	publisher?: string | null;

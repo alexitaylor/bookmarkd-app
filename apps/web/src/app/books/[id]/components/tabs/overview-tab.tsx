@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { BookText, ChevronRight, FileText, Star, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HtmlContent } from "@/components/ui/html-content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/utils/orpc";
 import { RelatedBooks } from "./related-books";
@@ -22,6 +23,8 @@ interface Book {
 	title: string;
 	subtitle?: string | null;
 	synopsis?: string | null;
+	overview?: string | null;
+	excerpt?: string | null;
 	coverUrl?: string | null;
 	pageCount?: number | null;
 	publisher?: string | null;
@@ -73,13 +76,38 @@ export function OverviewTab({
 
 	return (
 		<div className="space-y-8">
-			{/* Synopsis */}
+			{/* Overview - shorter description, shown first if available */}
+			{book.overview && (
+				<section>
+					<h2 className="mb-3 font-semibold text-xl">Overview</h2>
+					<HtmlContent
+						content={book.overview}
+						className="text-muted-foreground leading-relaxed"
+					/>
+				</section>
+			)}
+
+			{/* Synopsis - full description */}
 			{book.synopsis && (
 				<section>
 					<h2 className="mb-3 font-semibold text-xl">Synopsis</h2>
-					<p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
-						{book.synopsis}
-					</p>
+					<HtmlContent
+						content={book.synopsis}
+						className="text-muted-foreground leading-relaxed"
+					/>
+				</section>
+			)}
+
+			{/* Excerpt - sample from the book */}
+			{book.excerpt && (
+				<section>
+					<h2 className="mb-3 font-semibold text-xl">Read an Excerpt</h2>
+					<div className="rounded-lg border bg-muted/30 p-4">
+						<HtmlContent
+							content={book.excerpt}
+							className="text-muted-foreground italic leading-relaxed"
+						/>
+					</div>
 				</section>
 			)}
 

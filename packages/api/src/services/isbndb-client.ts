@@ -3,23 +3,49 @@ import { z } from "zod";
 // ISBNdb API response schemas
 const isbndbAuthorSchema = z.string();
 
+// Helper to coerce string/number to number (ISBNdb API sometimes returns numbers as strings)
+const coerceToNumber = z
+	.union([z.string(), z.number()])
+	.optional()
+	.nullable()
+	.transform((val) => {
+		if (val === null || val === undefined || val === "") return null;
+		const num = typeof val === "string" ? Number.parseFloat(val) : val;
+		return Number.isNaN(num) ? null : num;
+	});
+
 const isbndbBookSchema = z.object({
 	title: z.string(),
 	title_long: z.string().optional().nullable(),
 	isbn: z.string().optional().nullable(),
 	isbn13: z.string().optional().nullable(),
-	dewey_decimal: z.union([z.string(), z.array(z.string())]).optional().nullable(),
+	isbn10: z.string().optional().nullable(),
+	dewey_decimal: z
+		.union([z.string(), z.array(z.string())])
+		.optional()
+		.nullable(),
 	binding: z.string().optional().nullable(),
 	publisher: z.string().optional().nullable(),
 	language: z.string().optional().nullable(),
 	date_published: z.string().optional().nullable(),
-	edition: z.string().optional().nullable(),
-	pages: z.number().optional().nullable(),
+	edition: z.union([z.string(), z.number()]).optional().nullable(),
+	pages: coerceToNumber,
 	dimensions: z.string().optional().nullable(),
+	dimensions_structured: z
+		.object({
+			length: z.object({ unit: z.string(), value: z.number() }).optional(),
+			width: z.object({ unit: z.string(), value: z.number() }).optional(),
+			height: z.object({ unit: z.string(), value: z.number() }).optional(),
+			weight: z.object({ unit: z.string(), value: z.number() }).optional(),
+		})
+		.optional()
+		.nullable(),
 	overview: z.string().optional().nullable(),
 	image: z.string().optional().nullable(),
-	msrp: z.number().optional().nullable(),
+	image_original: z.string().optional().nullable(),
+	msrp: coerceToNumber,
 	excerpt: z.string().optional().nullable(),
+	synopsis: z.string().optional().nullable(),
 	synopsys: z.string().optional().nullable(), // Note: ISBNdb uses "synopsys" (typo in their API)
 	authors: z.array(isbndbAuthorSchema).optional().nullable(),
 	subjects: z.array(z.string()).optional().nullable(),
@@ -40,15 +66,23 @@ export type ISBNdbBook = z.infer<typeof isbndbBookSchema>;
 // Normalized book shape for our application
 export interface NormalizedExternalBook {
 	title: string;
+	titleLong: string | null;
 	subtitle: string | null;
 	isbn: string | null;
 	isbn13: string | null;
 	synopsis: string | null;
+	overview: string | null;
+	excerpt: string | null;
 	coverUrl: string | null;
+	imageOriginal: string | null;
 	publisher: string | null;
 	pageCount: number | null;
 	language: string | null;
 	datePublished: string | null;
+	binding: string | null;
+	edition: string | null;
+	msrp: number | null;
+	dimensions: string | null;
 	authors: string[];
 	genres: string[]; // Mapped from subjects
 }
@@ -81,17 +115,28 @@ export function normalizeISBNdbBook(book: ISBNdbBook): NormalizedExternalBook {
 		}
 	}
 
+	// Normalize edition to string
+	const edition = book.edition != null ? String(book.edition) : null;
+
 	return {
 		title: book.title,
+		titleLong: book.title_long || null,
 		subtitle,
-		isbn: book.isbn || null,
+		isbn: book.isbn || book.isbn10 || null,
 		isbn13: book.isbn13 || null,
-		synopsis: book.synopsys || book.overview || null,
+		synopsis: book.synopsis || book.synopsys || null,
+		overview: book.overview || null,
+		excerpt: book.excerpt || null,
 		coverUrl: book.image || null,
+		imageOriginal: book.image_original || null,
 		publisher: book.publisher || null,
 		pageCount: book.pages || null,
 		language: book.language || null,
 		datePublished: book.date_published || null,
+		binding: book.binding || null,
+		edition,
+		msrp: book.msrp || null,
+		dimensions: book.dimensions || null,
 		authors: book.authors?.filter(Boolean) || [],
 		genres: book.subjects?.filter(Boolean) || [],
 	};
@@ -99,7 +144,7 @@ export function normalizeISBNdbBook(book: ISBNdbBook): NormalizedExternalBook {
 
 // Fetch a single book by ISBN
 export async function fetchBookByISBN(
-	isbn: string
+	isbn: string,
 ): Promise<NormalizedExternalBook | null> {
 	const apiKey = getApiKey();
 	const cleanIsbn = isbn.replace(/[-\s]/g, "");
@@ -112,7 +157,7 @@ export async function fetchBookByISBN(
 					Authorization: apiKey,
 					"Content-Type": "application/json",
 				},
-			}
+			},
 		);
 
 		if (response.status === 404) {
@@ -124,7 +169,9 @@ export async function fetchBookByISBN(
 		}
 
 		if (!response.ok) {
-			throw new Error(`ISBNdb API error: ${response.status} ${response.statusText}`);
+			throw new Error(
+				`ISBNdb API error: ${response.status} ${response.statusText}`,
+			);
 		}
 
 		const data = await response.json();
@@ -147,7 +194,7 @@ export async function fetchBookByISBN(
 // Search for books by query
 export async function searchBooksFromISBNdb(
 	query: string,
-	limit: number = 20
+	limit = 20,
 ): Promise<NormalizedExternalBook[]> {
 	const apiKey = getApiKey();
 	const cleanQuery = query.trim();
@@ -164,7 +211,7 @@ export async function searchBooksFromISBNdb(
 					Authorization: apiKey,
 					"Content-Type": "application/json",
 				},
-			}
+			},
 		);
 
 		if (response.status === 404) {
@@ -176,7 +223,9 @@ export async function searchBooksFromISBNdb(
 		}
 
 		if (!response.ok) {
-			throw new Error(`ISBNdb API error: ${response.status} ${response.statusText}`);
+			throw new Error(
+				`ISBNdb API error: ${response.status} ${response.statusText}`,
+			);
 		}
 
 		const data = await response.json();

@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { BookStatusDropdown } from "@/components/book-status-dropdown";
+import { HtmlContent } from "@/components/ui/html-content";
 import type { BookItemProps } from "../types";
 
 export function BookListItem({
@@ -88,9 +89,11 @@ export function BookListItem({
 
 					{/* Synopsis */}
 					{synopsis && (
-						<p className="mt-2 line-clamp-2 text-muted-foreground text-sm">
-							{synopsis}
-						</p>
+						<HtmlContent
+							content={synopsis}
+							lineClamp={2}
+							className="mt-2 text-muted-foreground text-sm"
+						/>
 					)}
 				</div>
 
