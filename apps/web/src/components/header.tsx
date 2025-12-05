@@ -18,7 +18,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "./mode-toggle";
-import { BookSearch } from "./search/book-search";
+import { BookSearchDialog } from "./search";
 import { Button } from "./ui/button";
 import UserMenu from "./user-menu";
 
@@ -185,7 +185,7 @@ export default function Header() {
 			)}
 
 			{/* Book Search Modal */}
-			<BookSearch open={searchOpen} onOpenChange={setSearchOpen} />
+			<BookSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
 		</header>
 	);
 }

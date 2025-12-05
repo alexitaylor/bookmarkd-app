@@ -7,7 +7,7 @@ import { GenreLinks } from "@/components/genre-links";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { ReadingGoalProgress } from "@/components/reading-goal-progress";
 import { ReadingStats } from "@/components/reading-stats";
-import { SearchBar } from "@/components/search-bar";
+import { BookSearchDropdown } from "@/components/search";
 import { SectionHeader } from "@/components/section-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UpdateProgressModal } from "@/components/update-progress-modal";
@@ -72,7 +72,7 @@ export function HomeContent({ user }: HomeContentProps) {
 			</div>
 
 			{/* Search Bar */}
-			<SearchBar />
+			<BookSearchDropdown />
 
 			{/* Browse by Genre */}
 			<section className="space-y-4">

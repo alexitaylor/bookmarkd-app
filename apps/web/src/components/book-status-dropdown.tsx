@@ -87,7 +87,7 @@ export function BookStatusDropdown({
 			const config = statusConfig[status];
 			toast.success(`Book marked as "${config.label}"`);
 			// Invalidate all userBook queries to refresh the data
-			queryClient.invalidateQueries({ queryKey: [["userBook"]] });
+			queryClient.invalidateQueries({ queryKey: ["userBook"] });
 		},
 		onError: (error) => {
 			toast.error(`Failed to update status: ${error.message}`);
@@ -98,7 +98,7 @@ export function BookStatusDropdown({
 		mutationFn: () => client.userBook.remove({ bookId }),
 		onSuccess: () => {
 			toast.success("Book removed from shelf");
-			queryClient.invalidateQueries({ queryKey: [["userBook"]] });
+			queryClient.invalidateQueries({ queryKey: ["userBook"] });
 		},
 		onError: (error) => {
 			toast.error(`Failed to remove book: ${error.message}`);
@@ -119,7 +119,6 @@ export function BookStatusDropdown({
 	};
 
 	const handleRemove = (e: React.MouseEvent) => {
-		e.preventDefault();
 		e.stopPropagation();
 		removeMutation.mutate();
 	};
@@ -129,7 +128,7 @@ export function BookStatusDropdown({
 
 	if (compact) {
 		return (
-			<DropdownMenu>
+			<DropdownMenu modal={false}>
 				<DropdownMenuTrigger asChild>
 					<Button
 						variant={currentStatus === "None" ? "outline" : "secondary"}
@@ -139,7 +138,7 @@ export function BookStatusDropdown({
 							currentStatus !== "None" && statusConfig[currentStatus].color,
 						)}
 						disabled={isPending}
-						onClick={(e) => e.preventDefault()}
+						onClick={(e) => e.stopPropagation()}
 					>
 						<StatusIcon className="h-3.5 w-3.5" />
 						<span className="text-xs">
@@ -148,7 +147,11 @@ export function BookStatusDropdown({
 						<ChevronDown className="h-3 w-3 opacity-50" />
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="start">
+				<DropdownMenuContent
+					align="start"
+					onCloseAutoFocus={(e) => e.preventDefault()}
+					onPointerDownOutside={(e) => e.stopPropagation()}
+				>
 					{(
 						Object.entries(statusConfig) as [
 							BookStatus,
@@ -162,7 +165,6 @@ export function BookStatusDropdown({
 								<DropdownMenuItem
 									key={status}
 									onClick={(e) => {
-										e.preventDefault();
 										e.stopPropagation();
 										handleStatusChange(status);
 									}}
@@ -195,7 +197,7 @@ export function BookStatusDropdown({
 
 	// Full-size version (similar to the book detail page)
 	return (
-		<DropdownMenu>
+		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
 				<Button
 					variant="outline"
@@ -205,6 +207,7 @@ export function BookStatusDropdown({
 						currentStatus !== "None" && statusConfig[currentStatus].color,
 					)}
 					disabled={isPending}
+					onClick={(e) => e.stopPropagation()}
 				>
 					<span className="flex items-center gap-2">
 						<StatusIcon className="h-4 w-4" />
@@ -213,7 +216,12 @@ export function BookStatusDropdown({
 					<ChevronDown className="h-4 w-4 opacity-50" />
 				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-[200px]">
+			<DropdownMenuContent
+				align="start"
+				className="w-[200px]"
+				onCloseAutoFocus={(e) => e.preventDefault()}
+				onPointerDownOutside={(e) => e.stopPropagation()}
+			>
 				{(
 					Object.entries(statusConfig) as [
 						BookStatus,
@@ -226,7 +234,10 @@ export function BookStatusDropdown({
 						return (
 							<DropdownMenuItem
 								key={status}
-								onClick={() => handleStatusChange(status)}
+								onClick={(e) => {
+									e.stopPropagation();
+									handleStatusChange(status);
+								}}
 								className={cn(
 									"cursor-pointer",
 									currentStatus === status && "bg-accent",
